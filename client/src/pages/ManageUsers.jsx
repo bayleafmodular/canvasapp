@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Layout from '../components/layout/Layout';
-import { getAdminUsers, updateUserRole, deleteUser } from '../services/api';
+import { createAdminUser, getAdminUsers, updateUserRole, deleteUser } from '../services/api';
 import { Trash2, AlertTriangle } from 'lucide-react';
 
 const roleBadge = {
@@ -18,6 +18,14 @@ const getLoggedInId = () => {
     return JSON.parse(atob(token.split('.')[1])).id;
   } catch {
     return null;
+  }
+};
+
+const getPermissions = () => {
+  try {
+    return JSON.parse(localStorage.getItem('permissions') || '{}');
+  } catch {
+    return {};
   }
 };
 
@@ -59,7 +67,13 @@ export default function ManageUsers() {
   const [updating, setUpdating] = useState(null);
   const [confirmUser, setConfirmUser] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'user' });
   const loggedInId = getLoggedInId();
+  const role = localStorage.getItem('role');
+  const permissions = getPermissions();
+  const canCreate = role === 'admin' || permissions['users.create'];
+  const canEdit = role === 'admin' || permissions['users.edit'];
 
   useEffect(() => {
     getAdminUsers()
@@ -69,6 +83,7 @@ export default function ManageUsers() {
   }, []);
 
   const handleRoleChange = async (id, newRole) => {
+    if (!canEdit) return;
     setUpdating(id);
     try {
       const res = await updateUserRole(id, newRole);
@@ -78,6 +93,21 @@ export default function ManageUsers() {
       toast.error('Failed to update role');
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const handleCreate = async (event) => {
+    event.preventDefault();
+    setCreating(true);
+    try {
+      const res = await createAdminUser(newUser);
+      setUsers((prev) => [res.data, ...prev]);
+      setNewUser({ name: '', email: '', password: '', role: 'user' });
+      toast.success('User created successfully');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to create user');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -115,6 +145,53 @@ export default function ManageUsers() {
         </div>
 
         {/* Table */}
+        {canCreate && (
+          <form onSubmit={handleCreate} className="bg-white rounded-xl shadow-md p-6 space-y-4">
+            <h3 className="text-base font-semibold text-gray-700">Create User</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <input
+                value={newUser.name}
+                onChange={(e) => setNewUser((prev) => ({ ...prev, name: e.target.value }))}
+                required
+                placeholder="Name"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <input
+                type="email"
+                value={newUser.email}
+                onChange={(e) => setNewUser((prev) => ({ ...prev, email: e.target.value }))}
+                required
+                placeholder="Email"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <input
+                type="password"
+                value={newUser.password}
+                onChange={(e) => setNewUser((prev) => ({ ...prev, password: e.target.value }))}
+                required
+                placeholder="Password"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <select
+                value={newUser.role}
+                onChange={(e) => setNewUser((prev) => ({ ...prev, role: e.target.value }))}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="user">User</option>
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              disabled={creating}
+              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
+            >
+              {creating ? 'Creating...' : 'Create User'}
+            </button>
+          </form>
+        )}
+
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
@@ -158,7 +235,7 @@ export default function ManageUsers() {
                       <div className="relative inline-block">
                         <select
                           value={u.role}
-                          disabled={updating === u._id || u._id === loggedInId}
+                          disabled={!canEdit || updating === u._id || u._id === loggedInId}
                           onChange={(e) => handleRoleChange(u._id, e.target.value)}
                           title={u._id === loggedInId ? 'You cannot change your own role' : ''}
                           className={`appearance-none pl-3 pr-7 py-1 rounded-full text-xs font-semibold cursor-pointer
@@ -190,6 +267,7 @@ export default function ManageUsers() {
                     <td className="px-6 py-4">
                       <button
                         onClick={() => setConfirmUser(u)}
+                        disabled={!canEdit}
                         className="p-2 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                         title="Delete user"
                       >

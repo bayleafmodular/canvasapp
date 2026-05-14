@@ -20,6 +20,7 @@ export default function Layout({ children }) {
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar
         role={user?.role}
+        permissions={user?.permissions}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />

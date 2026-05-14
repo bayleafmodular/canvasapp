@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const { findUserById, toPublicUser } = require('../services/users');
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -11,9 +12,12 @@ const protect = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    const user = await findUserById(decoded.id);
+    if (!user) return res.status(401).json({ message: 'User no longer exists' });
+    req.user = toPublicUser(user);
     next();
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(401).json({ message: 'Token is not valid' });
   }
 };

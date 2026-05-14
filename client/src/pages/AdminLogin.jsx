@@ -1,31 +1,42 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
-import { loginUser } from '../services/api';
+import { loginUser, verifyLoginTwoFactor } from '../services/api';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 export default function AdminLogin() {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [twoFactorEmail, setTwoFactorEmail] = useState('');
+  const [twoFactorOtp, setTwoFactorOtp] = useState('');
   const navigate = useNavigate();
+
+  const completeLogin = ({ token, user }) => {
+    if (!['admin', 'staff'].includes(user.role)) {
+      setServerError('Access denied. Please use the user login page.');
+      return;
+    }
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('role', user.role);
+    localStorage.setItem('permissions', JSON.stringify(user.permissions || {}));
+
+    if (user.role === 'admin') navigate('/admin-dashboard');
+    else navigate(user.permissions?.['dashboard.show'] ? '/admin-dashboard' : '/staff-dashboard');
+  };
 
   const onSubmit = async (data) => {
     setLoading(true);
     setServerError('');
     try {
       const res = await loginUser(data);
-      const { token, user } = res.data;
-
-      if (!['admin', 'staff'].includes(user.role)) {
-        setServerError('Access denied. Please use the user login page.');
+      if (res.data.requiresTwoFactor) {
+        setTwoFactorEmail(res.data.email);
         return;
       }
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', user.role);
-
-      if (user.role === 'admin') navigate('/admin-dashboard');
-      else navigate('/staff-dashboard');
+      completeLogin(res.data);
     } catch (err) {
       const msg = err.response?.data?.message || 'Something went wrong';
       const email = err.response?.data?.email;
@@ -34,6 +45,20 @@ export default function AdminLogin() {
         return;
       }
       setServerError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitTwoFactor = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setServerError('');
+    try {
+      const res = await verifyLoginTwoFactor({ email: twoFactorEmail, otp: twoFactorOtp });
+      completeLogin(res.data);
+    } catch (err) {
+      setServerError(err.response?.data?.message || 'Invalid OTP');
     } finally {
       setLoading(false);
     }
@@ -52,13 +77,41 @@ export default function AdminLogin() {
           <p className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-2 mb-4">{serverError}</p>
         )}
 
+        {!twoFactorEmail && <GoogleAuthButton mode="admin" disabled={loading} onError={setServerError} />}
+
+        {!twoFactorEmail && <div className="flex items-center gap-3 my-5">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span className="text-xs font-medium text-gray-400 uppercase">or</span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>}
+
+        {twoFactorEmail ? (
+          <form onSubmit={submitTwoFactor} className="space-y-5">
+            <p className="text-sm text-gray-500">Enter the 6-digit code sent to {twoFactorEmail}.</p>
+            <input
+              value={twoFactorOtp}
+              onChange={(event) => setTwoFactorOtp(event.target.value)}
+              maxLength={6}
+              required
+              placeholder="______"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-center tracking-widest text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 text-white font-medium py-2 rounded-lg transition-colors"
+            >
+              {loading ? 'Verifying...' : 'Verify 2FA'}
+            </button>
+          </form>
+        ) : (
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
               type="email"
               {...register('email', {
-                requiindigo: 'Email is requiindigo',
+                required: 'Email is required',
                 pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email' },
               })}
               placeholder="admin@example.com"
@@ -71,7 +124,7 @@ export default function AdminLogin() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input
               type="password"
-              {...register('password', { requiindigo: 'Password is requiindigo' })}
+              {...register('password', { required: 'Password is required' })}
               placeholder="Your password"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
@@ -85,7 +138,13 @@ export default function AdminLogin() {
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
+          <div className="text-right">
+            <Link to="/forgot-password" className="text-sm text-indigo-500 hover:underline font-medium">
+              Forgot password?
+            </Link>
+          </div>
         </form>
+        )}
 
         {/* <p className="text-sm text-center text-gray-500 mt-6">
           Not an admin?{' '}

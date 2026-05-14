@@ -1,60 +1,153 @@
 const express = require('express');
-const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const protect = require('../middleware/authMiddleware');
 const role = require('../middleware/roleMiddleware');
+const can = require('../middleware/permissionMiddleware');
+const {
+  listUsers,
+  listRecentUsers,
+  countUsers,
+  updateUserRole,
+  deleteUser,
+  listStaff,
+  createStaff,
+  updateStaff,
+  createManagedUser,
+} = require('../services/users');
 
 const router = express.Router();
 
 // GET /api/admin/dashboard-stats
-router.get('/dashboard-stats', protect, role('admin'), async (req, res) => {
+router.get('/dashboard-stats', protect, role('admin', 'staff'), can('dashboard.show'), async (req, res) => {
   try {
     const [totalUsers, staffCount, adminCount, recentUsers] = await Promise.all([
-      User.countDocuments(),
-      User.countDocuments({ role: 'staff' }),
-      User.countDocuments({ role: 'admin' }),
-      User.find().sort({ createdAt: -1 }).limit(5).select('name email role createdAt'),
+      countUsers(),
+      countUsers('staff'),
+      countUsers('admin'),
+      listRecentUsers(5),
     ]);
 
     res.json({ totalUsers, activeUsers: totalUsers, staffCount, adminCount, recentUsers });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
 // GET /api/admin/users
-router.get('/users', protect, role('admin'), async (req, res) => {
+router.get('/users', protect, role('admin', 'staff'), can('users.show'), async (req, res) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 }).select('-password -otp -otpExpiry');
-    res.json(users);
+    res.json(await listUsers());
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
+// POST /api/admin/users
+router.post('/users', protect, role('admin', 'staff'), can('users.create'), async (req, res) => {
+  const { name, email, password, role: newRole = 'user' } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: 'Name, email, and password are required' });
+  }
+
+  if (!['admin', 'staff', 'user'].includes(newRole)) {
+    return res.status(400).json({ message: 'Invalid role' });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ message: 'Password must be at least 6 characters' });
+  }
+
+  try {
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await createManagedUser({ name, email, passwordHash, role: newRole });
+    res.status(201).json(user);
+  } catch (err) {
+    console.error(err);
+    const status = err.code === '23505' ? 400 : 500;
+    const message = err.code === '23505' ? 'Email already in use' : 'Server error';
+    res.status(status).json({ message });
+  }
+});
+
 // PATCH /api/admin/users/:id/role
-router.patch('/users/:id/role', protect, role('admin'), async (req, res) => {
+router.patch('/users/:id/role', protect, role('admin', 'staff'), can('users.edit'), async (req, res) => {
   if (req.user.id === req.params.id)
     return res.status(403).json({ message: 'You cannot change your own role' });
   const { role: newRole } = req.body;
   if (!['admin', 'staff', 'user'].includes(newRole))
     return res.status(400).json({ message: 'Invalid role' });
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, { role: newRole }, { new: true }).select('-password -otp -otpExpiry');
+    const user = await updateUserRole(req.params.id, newRole);
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
 // DELETE /api/admin/users/:id
-router.delete('/users/:id', protect, role('admin'), async (req, res) => {
+router.delete('/users/:id', protect, role('admin', 'staff'), can('users.edit'), async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    const user = await deleteUser(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json({ message: 'User deleted' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/admin/staff
+router.get('/staff', protect, role('admin', 'staff'), can('staff.show'), async (req, res) => {
+  try {
+    res.json(await listStaff());
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST /api/admin/staff
+router.post('/staff', protect, role('admin', 'staff'), can('staff.create'), async (req, res) => {
+  const { name, email, password, permissions } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: 'Name, email, and password are required' });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ message: 'Password must be at least 6 characters' });
+  }
+
+  try {
+    const passwordHash = await bcrypt.hash(password, 10);
+    const staff = await createStaff({ name, email, passwordHash, permissions });
+    res.status(201).json(staff);
+  } catch (err) {
+    console.error(err);
+    const status = err.code === '23505' ? 400 : 500;
+    const message = err.code === '23505' ? 'Email already in use' : 'Server error';
+    res.status(status).json({ message });
+  }
+});
+
+// PATCH /api/admin/staff/:id
+router.patch('/staff/:id', protect, role('admin', 'staff'), can('staff.edit'), async (req, res) => {
+  const { name, email, permissions } = req.body;
+
+  try {
+    const staff = await updateStaff(req.params.id, { name, email, permissions });
+    if (!staff) return res.status(404).json({ message: 'Staff user not found' });
+    res.json(staff);
+  } catch (err) {
+    console.error(err);
+    const status = err.code === '23505' ? 400 : 500;
+    const message = err.code === '23505' ? 'Email already in use' : 'Server error';
+    res.status(status).json({ message });
   }
 });
 

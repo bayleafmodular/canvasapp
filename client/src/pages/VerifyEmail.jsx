@@ -21,9 +21,10 @@ export default function VerifyEmail() {
       const res = await verifyOtp({ email, otp });
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('role', res.data.user.role);
+      localStorage.setItem('permissions', JSON.stringify(res.data.user.permissions || {}));
       const role = res.data.user.role;
       if (role === 'admin') navigate('/admin-dashboard');
-      else if (role === 'staff') navigate('/staff-dashboard');
+      else if (role === 'staff') navigate(res.data.user.permissions?.['dashboard.show'] ? '/admin-dashboard' : '/staff-dashboard');
       else navigate('/user-dashboard');
     } catch (err) {
       setServerError(err.response?.data?.message || 'Something went wrong');

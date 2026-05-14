@@ -59,8 +59,12 @@ export default function Header({ user, onMenuToggle }) {
           onClick={() => setOpen((v) => !v)}
           className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
         >
-          <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-sm font-bold">
-            {user?.name?.charAt(0).toUpperCase()}
+          <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+            {user?.profilePicUrl ? (
+              <img src={user.profilePicUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              user?.name?.charAt(0).toUpperCase()
+            )}
           </div>
           <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

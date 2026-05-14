@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser } from '../services/api';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 export default function Register() {
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -35,6 +36,14 @@ export default function Register() {
         {success && (
           <p className="bg-green-50 text-green-600 text-sm rounded-lg px-4 py-2 mb-4">{success}</p>
         )}
+
+        <GoogleAuthButton mode="user" disabled={loading} onError={setServerError} />
+
+        <div className="flex items-center gap-3 my-5">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span className="text-xs font-medium text-gray-400 uppercase">or</span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
           <div>
