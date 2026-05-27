@@ -61,7 +61,20 @@ create index if not exists app_users_username_idx on public.app_users (username)
 create index if not exists app_users_role_idx on public.app_users (role);
 create index if not exists app_users_created_at_idx on public.app_users (created_at desc);
 
+create table if not exists public.drawings (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  name text not null,
+  data jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists drawings_user_id_idx on public.drawings (user_id);
+create index if not exists drawings_updated_at_idx on public.drawings (updated_at desc);
+
 alter table public.app_users enable row level security;
+alter table public.drawings enable row level security;
 
 -- This app reads/writes through the Express backend with SUPABASE_SERVICE_ROLE_KEY.
 -- No browser/client policies are needed unless you later connect Supabase directly from React.

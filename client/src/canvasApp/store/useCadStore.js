@@ -1,0 +1,137 @@
+import { create } from "zustand";
+import { v4 as uuidv4 } from "uuid";
+import { Tool } from "../types";
+const DEFAULT_LAYER_ID = "layer-1";
+const useCadStore = create((set, get) => ({
+  objects: [],
+  layers: [
+    { id: DEFAULT_LAYER_ID, name: "0", visible: true, locked: false, color: "#FFFFFF" }
+  ],
+  activeLayerId: DEFAULT_LAYER_ID,
+  selectedIds: [],
+  activeTool: Tool.SELECT,
+  stageScale: 1,
+  stagePosition: { x: 0, y: 0 },
+  gridEnabled: true,
+  snapEnabled: true,
+  orthoEnabled: false,
+  showMeasurements: true,
+  activeColor: "#FFFFFF",
+  history: [[]],
+  historyStep: 0,
+  setTool: (tool) => set({ activeTool: tool, selectedIds: [] }),
+  setStageScale: (scale) => set({ stageScale: scale }),
+  setStagePosition: (pos) => set({ stagePosition: pos }),
+  toggleGrid: () => set((state) => ({ gridEnabled: !state.gridEnabled })),
+  toggleSnap: () => set((state) => ({ snapEnabled: !state.snapEnabled })),
+  toggleOrtho: () => set((state) => ({ orthoEnabled: !state.orthoEnabled })),
+  toggleMeasurements: () => set((state) => ({ showMeasurements: !state.showMeasurements })),
+  setActiveColor: (color) => set({ activeColor: color }),
+  addObject: (obj) => {
+    const id = uuidv4();
+    const newObj = { ...obj, id };
+    set((state) => {
+      const newObjects = [...state.objects, newObj];
+      return { objects: newObjects };
+    });
+    return id;
+  },
+  updateObject: (id, updates) => {
+    set((state) => {
+      const newObjects = state.objects.map(
+        (obj) => obj.id === id ? { ...obj, ...updates } : obj
+      );
+      return { objects: newObjects };
+    });
+  },
+  deleteSelected: () => {
+    set((state) => {
+      const newObjects = state.objects.filter((obj) => !state.selectedIds.includes(obj.id));
+      return { objects: newObjects, selectedIds: [] };
+    });
+    get().commitHistory();
+  },
+  deleteObject: (id) => {
+    set((state) => {
+      const newObjects = state.objects.filter((obj) => obj.id !== id);
+      const newSelectedIds = state.selectedIds.filter((selectedId) => selectedId !== id);
+      return { objects: newObjects, selectedIds: newSelectedIds };
+    });
+    get().commitHistory();
+  },
+  selectObjects: (ids) => set({ selectedIds: ids }),
+  setActiveLayer: (id) => set({ activeLayerId: id }),
+  addLayer: (name) => set((state) => {
+    const newLayer = {
+      id: uuidv4(),
+      name,
+      visible: true,
+      locked: false,
+      color: `#${Math.floor(Math.random() * 16777215).toString(16).padEnd(6, "0")}`
+    };
+    return { layers: [...state.layers, newLayer] };
+  }),
+  toggleLayerVisibility: (id) => set((state) => ({
+    layers: state.layers.map(
+      (layer) => layer.id === id ? { ...layer, visible: !layer.visible } : layer
+    )
+  })),
+  deleteLayer: (id) => set((state) => {
+    if (state.layers.length <= 1) return state;
+    const newLayers = state.layers.filter((layer) => layer.id !== id);
+    let newActiveId = state.activeLayerId;
+    if (newActiveId === id) {
+      newActiveId = newLayers[0].id;
+    }
+    const newObjects = state.objects.filter((obj) => obj.layerId !== id);
+    return { layers: newLayers, activeLayerId: newActiveId, objects: newObjects };
+  }),
+  undo: () => {
+    set((state) => {
+      if (state.historyStep > 0) {
+        const step = state.historyStep - 1;
+        return {
+          historyStep: step,
+          objects: state.history[step],
+          selectedIds: []
+        };
+      }
+      return state;
+    });
+  },
+  redo: () => {
+    set((state) => {
+      if (state.historyStep < state.history.length - 1) {
+        const step = state.historyStep + 1;
+        return {
+          historyStep: step,
+          objects: state.history[step],
+          selectedIds: []
+        };
+      }
+      return state;
+    });
+  },
+  commitHistory: () => {
+    set((state) => {
+      const currentHistory = state.history.slice(0, state.historyStep + 1);
+      return {
+        history: [...currentHistory, state.objects],
+        historyStep: currentHistory.length
+      };
+    });
+  },
+  clearDrawing: () => {
+    set({
+      objects: [],
+      history: [[]],
+      historyStep: 0,
+      selectedIds: [],
+      layers: [{ id: DEFAULT_LAYER_ID, name: "0", visible: true, locked: false, color: "#FFFFFF" }],
+      activeLayerId: DEFAULT_LAYER_ID
+    });
+  }
+}));
+export {
+  useCadStore
+};

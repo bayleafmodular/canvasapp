@@ -7,10 +7,11 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:5173'] }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/drawings', require('./routes/drawings'));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });

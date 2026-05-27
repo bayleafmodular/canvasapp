@@ -13,6 +13,7 @@ import UserDashboard from './pages/UserDashboard';
 import ManageUsers from './pages/ManageUsers';
 import ManageStaff from './pages/ManageStaff';
 import Settings from './pages/Settings';
+import CanvasApp from './pages/CanvasApp';
 import PrivateRoute from './components/PrivateRoute';
 
 function App() {
@@ -56,6 +57,11 @@ function App() {
         <Route path="/settings" element={
           <PrivateRoute allowedRoles={['admin', 'staff', 'user']}>
             <Settings />
+          </PrivateRoute>
+        } />
+        <Route path="/canvas-app" element={
+          <PrivateRoute allowedRoles={['admin', 'staff', 'user']}>
+            <CanvasApp />
           </PrivateRoute>
         } />
       </Routes>

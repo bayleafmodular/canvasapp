@@ -30,3 +30,7 @@ export const deleteUser = (id) => api.delete(`/admin/users/${id}`);
 export const getStaffUsers = () => api.get('/admin/staff');
 export const createStaffUser = (data) => api.post('/admin/staff', data);
 export const updateStaffUser = (id, data) => api.patch(`/admin/staff/${id}`, data);
+export const getDrawings = () => api.get('/drawings');
+export const createDrawing = (data) => api.post('/drawings', data);
+export const getDrawing = (id) => api.get(`/drawings/${id}`);
+export const deleteDrawing = (id) => api.delete(`/drawings/${id}`);
