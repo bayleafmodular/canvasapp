@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Layout from '../components/layout/Layout';
 import { createStaffUser, getStaffUsers, updateStaffUser } from '../services/api';
+import { Search } from 'lucide-react';
 
 const permissionGroups = [
   {
@@ -85,12 +86,21 @@ export default function ManageStaff() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [searchTerm, setSearchTerm] = useState('');
   const role = localStorage.getItem('role');
   const permissions = getPermissions();
   const canCreate = role === 'admin' || permissions['staff.create'];
   const canEdit = role === 'admin' || permissions['staff.edit'];
 
   const isEditing = useMemo(() => Boolean(editingId), [editingId]);
+  const filteredStaff = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return staff;
+
+    return staff.filter((user) =>
+      [user.name, user.email].some((value) => value?.toLowerCase().includes(query))
+    );
+  }, [staff, searchTerm]);
 
   const loadStaff = () => {
     setLoading(true);
@@ -166,70 +176,83 @@ export default function ManageStaff() {
         </div>
 
         {(canCreate || canEdit) && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-6 space-y-5">
-          <div className="flex items-center justify-between gap-4">
-            <h3 className="text-base font-semibold text-gray-700">
-              {isEditing ? 'Edit Staff Rights' : 'Create Staff User'}
-            </h3>
-            {isEditing && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="text-sm font-medium text-gray-500 hover:text-gray-700"
-              >
-                Cancel edit
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input
-                value={form.name}
-                onChange={(event) => updateField('name', event.target.value)}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+          <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-6 space-y-5">
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="text-base font-semibold text-gray-700">
+                {isEditing ? 'Edit Staff Rights' : 'Create Staff User'}
+              </h3>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="text-sm font-medium text-gray-500 hover:text-gray-700"
+                >
+                  Cancel edit
+                </button>
+              )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(event) => updateField('email', event.target.value)}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(event) => updateField('password', event.target.value)}
-                required={!isEditing}
-                disabled={isEditing}
-                placeholder={isEditing ? 'Password unchanged' : 'Min 6 characters'}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-50"
-              />
-            </div>
-          </div>
 
-          <PermissionGrid permissions={form.permissions} onChange={updatePermission} disabled={saving} />
 
-          <button
-            type="submit"
-            disabled={saving || (!isEditing && !canCreate) || (isEditing && !canEdit)}
-            className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
-          >
-            {saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Staff'}
-          </button>
-        </form>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  value={form.name}
+                  onChange={(event) => updateField('name', event.target.value)}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(event) => updateField('email', event.target.value)}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(event) => updateField('password', event.target.value)}
+                  required={!isEditing}
+                  disabled={isEditing}
+                  placeholder={isEditing ? 'Password unchanged' : 'Min 6 characters'}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-50"
+                />
+              </div>
+            </div>
+
+            <PermissionGrid permissions={form.permissions} onChange={updatePermission} disabled={saving} />
+
+            <button
+              type="submit"
+              disabled={saving || (!isEditing && !canCreate) || (isEditing && !canEdit)}
+              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
+            >
+              {saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Staff'}
+            </button>
+          </form>
         )}
 
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="overflow-x-auto">
+            <div className='pb-4 px-6'>
+              <div className="relative mt-4 max-w-md">
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search staff by name or email"
+                  className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr className="text-gray-400 uppercase text-xs tracking-wide">
@@ -244,7 +267,9 @@ export default function ManageStaff() {
                   <tr><td colSpan={4} className="px-6 py-10 text-center text-gray-400">Loading...</td></tr>
                 ) : staff.length === 0 ? (
                   <tr><td colSpan={4} className="px-6 py-10 text-center text-gray-400">No staff users found</td></tr>
-                ) : staff.map((user) => {
+                ) : filteredStaff.length === 0 ? (
+                  <tr><td colSpan={4} className="px-6 py-10 text-center text-gray-400">No matching staff users found</td></tr>
+                ) : filteredStaff.map((user) => {
                   const allowed = Object.entries(user.permissions || {}).filter(([, value]) => value).length;
                   return (
                     <tr key={user.id} className="hover:bg-gray-50 transition-colors">

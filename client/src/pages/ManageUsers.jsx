@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Layout from '../components/layout/Layout';
 import { createAdminUser, getAdminUsers, updateUserRole, deleteUser } from '../services/api';
-import { Trash2, AlertTriangle } from 'lucide-react';
+import { Trash2, AlertTriangle, Search } from 'lucide-react';
 
 const roleBadge = {
   admin: 'bg-red-100 text-red-600',
@@ -69,11 +69,20 @@ export default function ManageUsers() {
   const [deleting, setDeleting] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'user' });
+  const [searchTerm, setSearchTerm] = useState('');
   const loggedInId = getLoggedInId();
   const role = localStorage.getItem('role');
   const permissions = getPermissions();
   const canCreate = role === 'admin' || permissions['users.create'];
   const canEdit = role === 'admin' || permissions['users.edit'];
+  const filteredUsers = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return users;
+
+    return users.filter((user) =>
+      [user.name, user.email, user.role].some((value) => value?.toLowerCase().includes(query))
+    );
+  }, [users, searchTerm]);
 
   useEffect(() => {
     getAdminUsers()
@@ -194,6 +203,18 @@ export default function ManageUsers() {
 
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="overflow-x-auto">
+            <div className='pb-4 px-6'>
+              <div className="relative mt-4 max-w-md">
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search users by name, email, or role"
+                  className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr className="text-gray-400 uppercase text-xs tracking-wide">
@@ -214,7 +235,11 @@ export default function ManageUsers() {
                   <tr>
                     <td colSpan={6} className="px-6 py-10 text-center text-gray-400">No users found</td>
                   </tr>
-                ) : users.map((u) => (
+                ) : filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-10 text-center text-gray-400">No matching users found</td>
+                  </tr>
+                ) : filteredUsers.map((u) => (
                   <tr key={u._id} className="hover:bg-gray-50 transition-colors">
 
                     {/* Name + avatar */}
