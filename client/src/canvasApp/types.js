@@ -5,6 +5,9 @@ var ShapeType = /* @__PURE__ */ ((ShapeType2) => {
   ShapeType2["CIRCLE"] = "circle";
   ShapeType2["ARC"] = "arc";
   ShapeType2["FREE_DRAW"] = "free_draw";
+  ShapeType2["WALL"] = "wall";
+  ShapeType2["BEAM"] = "beam";
+  ShapeType2["LINTEL"] = "lintel";
   return ShapeType2;
 })(ShapeType || {});
 var Tool = /* @__PURE__ */ ((Tool2) => {
@@ -18,6 +21,9 @@ var Tool = /* @__PURE__ */ ((Tool2) => {
   Tool2["FREE_DRAW"] = "free_draw";
   Tool2["DELETE"] = "delete";
   Tool2["ERASER"] = "eraser";
+  Tool2["WALL"] = "wall";
+  Tool2["BEAM"] = "beam";
+  Tool2["LINTEL"] = "lintel";
   return Tool2;
 })(Tool || {});
 export {

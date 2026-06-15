@@ -34,3 +34,5 @@ export const getDrawings = () => api.get('/drawings');
 export const createDrawing = (data) => api.post('/drawings', data);
 export const getDrawing = (id) => api.get(`/drawings/${id}`);
 export const deleteDrawing = (id) => api.delete(`/drawings/${id}`);
+export const getPricingSettings = () => api.get('/pricing');
+export const updatePricingSettings = (data) => api.patch('/pricing', data);

@@ -80,7 +80,7 @@ function RightSidebar() {
           </div>
         </div>;
     }
-    if (obj.type === ShapeType.LINE && obj.points?.length >= 4) {
+    if ((obj.type === ShapeType.LINE || obj.type === ShapeType.WALL || obj.type === ShapeType.BEAM || obj.type === ShapeType.LINTEL) && obj.points?.length >= 4) {
       const x1 = obj.points[0];
       const y1 = obj.points[1];
       const x2 = obj.points[2];
@@ -147,20 +147,18 @@ function RightSidebar() {
                   </div>
                 </div>
                 
-                {
-    /* <div className="mt-1">
-      <label className="text-[#555] block mb-1">Rotation (deg)</label>
-      <input 
-        type="number" 
-        value={(selectedObjects[0].rotation || 0).toFixed(2)} 
-        onChange={(e) => {
-          const val = parseFloat(e.target.value) || 0;
-          window.dispatchEvent(new CustomEvent('rotate-selected', { detail: val }));
-        }}
-        className="w-full bg-[#1a1b1e] border border-[#444] rounded px-2 py-1 text-white font-mono" 
-      />
-    </div> */
-  }
+                <div className="mt-1">
+                  <label className="text-[#555] block mb-1">Rotation (deg)</label>
+                  <input
+                    type="number"
+                    value={(selectedObjects[0].rotation || 0).toFixed(2)}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      window.dispatchEvent(new CustomEvent("rotate-selected", { detail: val }));
+                    }}
+                    className="w-full bg-[#1a1b1e] border border-[#444] rounded px-2 py-1 text-white font-mono"
+                  />
+                </div>
 
                 {renderDimensions(selectedObjects[0])}
               </div>

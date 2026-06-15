@@ -1,18 +1,61 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import Layout from '../components/layout/Layout';
-import { getAdminStats } from '../services/api';
+import { getAdminStats, getPricingSettings, updatePricingSettings } from '../services/api';
+import { DEFAULT_PRICING, PRICE_FIELD_DEFS } from '../canvasApp/utils/pricing';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pricing, setPricing] = useState(DEFAULT_PRICING);
+  const [pricingLoading, setPricingLoading] = useState(true);
+  const [pricingSaving, setPricingSaving] = useState(false);
+  const role = localStorage.getItem('role');
+  const permissions = JSON.parse(localStorage.getItem('permissions') || '{}');
+  const canEditPricing = role === 'admin' || permissions['pricing.edit'];
 
   useEffect(() => {
     getAdminStats()
       .then((res) => setStats(res.data))
       .catch(() => setError('Failed to load stats'))
       .finally(() => setLoading(false));
+
+    getPricingSettings()
+      .then((res) => setPricing(res.data))
+      .catch(() => toast.error('Failed to load pricing settings'))
+      .finally(() => setPricingLoading(false));
   }, []);
+
+  const updateRate = (key, value) => {
+    setPricing((prev) => ({
+      ...prev,
+      rates: {
+        ...prev.rates,
+        [key]: value,
+      },
+    }));
+  };
+
+  const savePricing = async (event) => {
+    event.preventDefault();
+    setPricingSaving(true);
+    try {
+      const payload = {
+        currency: pricing.currency,
+        rates: Object.fromEntries(
+          PRICE_FIELD_DEFS.map(({ key }) => [key, Number(pricing.rates[key]) || 0])
+        ),
+      };
+      const res = await updatePricingSettings(payload);
+      setPricing(res.data);
+      toast.success('Pricing settings updated');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update pricing settings');
+    } finally {
+      setPricingSaving(false);
+    }
+  };
 
   const cards = [
     { label: 'Total Users', value: stats?.totalUsers, bg: 'bg-blue-500' },
@@ -87,6 +130,52 @@ export default function AdminDashboard() {
             </table>
           </div>
         </div>
+
+        <form onSubmit={savePricing} className="bg-white rounded-xl shadow-md p-6 space-y-5">
+          <div>
+            <h3 className="text-base font-semibold text-gray-700">Canvas Pricing</h3>
+            <p className="text-gray-500 text-sm mt-1">Rates used when users click Show Price inside the canvas app.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+              <input
+                value={pricing.currency}
+                onChange={(event) => setPricing((prev) => ({ ...prev, currency: event.target.value }))}
+                disabled={pricingLoading || pricingSaving || !canEditPricing}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            {PRICE_FIELD_DEFS.map((field) => (
+              <div key={field.key}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{field.label} rate</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={pricing.rates?.[field.key] ?? 0}
+                  onChange={(event) => updateRate(field.key, event.target.value)}
+                  disabled={pricingLoading || pricingSaving || !canEditPricing}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <p className="text-xs text-gray-400 mt-1">{field.unit}</p>
+              </div>
+            ))}
+          </div>
+
+          {canEditPricing ? (
+            <button
+              type="submit"
+              disabled={pricingLoading || pricingSaving}
+              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
+            >
+              {pricingSaving ? 'Saving...' : 'Save Pricing'}
+            </button>
+          ) : (
+            <p className="text-sm text-gray-500">You can view pricing, but need pricing edit permission to update it.</p>
+          )}
+        </form>
 
       </div>
     </Layout>

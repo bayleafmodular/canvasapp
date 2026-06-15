@@ -17,8 +17,36 @@ const useCadStore = create((set, get) => ({
   orthoEnabled: false,
   showMeasurements: true,
   activeColor: "#FFFFFF",
+  clipboard: [],
   history: [[]],
   historyStep: 0,
+  copyObjects: () => set((state) => {
+    const selectedObjects = state.objects.filter((obj) => state.selectedIds.includes(obj.id));
+    return { clipboard: selectedObjects };
+  }),
+  pasteObjects: () => {
+    const { clipboard, objects } = useCadStore.getState();
+    if (clipboard.length === 0) return;
+    const newObjects = clipboard.map((obj) => ({
+      ...obj,
+      id: uuidv4(),
+      x: obj.x + 20,
+      y: obj.y + 20
+    }));
+    useCadStore.setState({
+      objects: [...objects, ...newObjects],
+      selectedIds: newObjects.map((obj) => obj.id)
+    });
+    useCadStore.getState().commitHistory();
+  },
+  cutObjects: () => {
+    useCadStore.getState().copyObjects();
+    useCadStore.getState().deleteSelected();
+  },
+  duplicateObjects: () => {
+    useCadStore.getState().copyObjects();
+    useCadStore.getState().pasteObjects();
+  },
   setTool: (tool) => set({ activeTool: tool, selectedIds: [] }),
   setStageScale: (scale) => set({ stageScale: scale }),
   setStagePosition: (pos) => set({ stagePosition: pos }),

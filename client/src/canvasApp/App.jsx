@@ -39,6 +39,15 @@ function App() {
           case "p":
             setTool(Tool.POLYLINE);
             break;
+          case "w":
+            setTool(Tool.WALL);
+            break;
+          case "b":
+            setTool(Tool.BEAM);
+            break;
+          case "u":
+            setTool(Tool.LINTEL);
+            break;
           case "r":
             setTool(Tool.RECTANGLE);
             break;

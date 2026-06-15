@@ -10,7 +10,7 @@ import {
   Trash2
 } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { PolylineIcon, ArcIcon } from "./Icons";
+import { PolylineIcon, ArcIcon, WallIcon, BeamIcon, LintelIcon } from "./Icons";
 function LeftToolbar() {
   const { activeTool, setTool, deleteSelected } = useCadStore();
   const toolButtons = [
@@ -19,6 +19,9 @@ function LeftToolbar() {
     { divider: true },
     { tool: Tool.LINE, icon: Minus, label: "Line (L)" },
     { tool: Tool.POLYLINE, icon: PolylineIcon, label: "Polyline (P)" },
+    { tool: Tool.WALL, icon: WallIcon, label: "Wall (W)" },
+    { tool: Tool.BEAM, icon: BeamIcon, label: "Beam (B)" },
+    { tool: Tool.LINTEL, icon: LintelIcon, label: "Lintel (U)" },
     { tool: Tool.RECTANGLE, icon: Square, label: "Rectangle (R)" },
     { tool: Tool.CIRCLE, icon: Circle, label: "Circle (C)" },
     { tool: Tool.ARC, icon: ArcIcon, label: "Arc (A)" },

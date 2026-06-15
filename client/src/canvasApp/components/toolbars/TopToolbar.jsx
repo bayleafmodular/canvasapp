@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useCadStore } from "../../store/useCadStore";
-import { Undo2, Redo2, Grid, Magnet, Ruler, AlignEndHorizontal, Upload, Image, FileJson, FileEdit, CloudUpload, CloudDownload, ChevronDown, Save, FolderOpen, Trash2, X } from "lucide-react";
+import { Undo2, Redo2, Grid, Magnet, Ruler, AlignEndHorizontal, Upload, Image, FileJson, FileEdit, CloudUpload, CloudDownload, ChevronDown, Save, FolderOpen, Trash2, X, FilePlus, Calculator } from "lucide-react";
 import { cn, downloadFile } from "../../lib/utils";
-import { createDrawing, deleteDrawing, getDrawing, getDrawings } from "../../../services/api";
+import { createDrawing, deleteDrawing, getDrawing, getDrawings, getPricingSettings } from "../../../services/api";
 import Drawing from "dxf-writer";
 import { ShapeType } from "../../types";
+import { calculateDrawingPrice } from "../../utils/pricing";
 function TopToolbar() {
   const {
     gridEnabled,
@@ -32,6 +33,9 @@ function TopToolbar() {
   const [saveName, setSaveName] = useState("");
   const [browserProjects, setBrowserProjects] = useState([]);
   const [browserLoading, setBrowserLoading] = useState(false);
+  const [priceModalOpen, setPriceModalOpen] = useState(false);
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [priceResult, setPriceResult] = useState(null);
   useEffect(() => {
     if (browserModalOpen !== "load") return;
 
@@ -84,6 +88,9 @@ function TopToolbar() {
       d.setActiveLayer(layer);
       switch (obj.type) {
         case ShapeType.LINE:
+        case ShapeType.WALL:
+        case ShapeType.BEAM:
+        case ShapeType.LINTEL:
           if (obj.points.length >= 4) {
             d.drawLine(obj.points[0] + obj.x, -(obj.points[1] + obj.y), obj.points[2] + obj.x, -(obj.points[3] + obj.y));
           }
@@ -124,6 +131,20 @@ function TopToolbar() {
     const url = URL.createObjectURL(blob);
     downloadFile(url, "cad-export.dxf");
     URL.revokeObjectURL(url);
+  };
+  const formatMoney = (amount, currency = "INR") => `${currency} ${Number(amount || 0).toFixed(2)}`;
+  const handleShowPrice = async () => {
+    setPriceModalOpen(true);
+    setPriceLoading(true);
+    try {
+      const { data: pricing } = await getPricingSettings();
+      setPriceResult(calculateDrawingPrice(objects, pricing));
+    } catch (e) {
+      alert(e.response?.data?.message || "Failed to calculate drawing price.");
+      setPriceModalOpen(false);
+    } finally {
+      setPriceLoading(false);
+    }
   };
   const handleSaveJson = () => {
     const data = {
@@ -280,15 +301,13 @@ function TopToolbar() {
         onChange={handleLoadJson}
       />
 
-      {
-        /* <button 
-          className="px-3 py-1.5 text-xs uppercase font-semibold tracking-wider bg-transparent text-[#777] border border-transparent hover:text-white rounded hover:bg-[#3a3b41] transition-colors flex items-center gap-1.5"
-          onClick={handleNewDrawing}
-          title="New Drawing"
-        >
-          <FilePlus size={14} /> New
-        </button> */
-      }
+      <button
+        className="px-3 py-1.5 text-xs uppercase font-semibold tracking-wider bg-transparent text-[#777] border border-transparent hover:text-white rounded hover:bg-[#3a3b41] transition-colors flex items-center gap-1.5"
+        onClick={handleNewDrawing}
+        title="New Drawing"
+      >
+        <FilePlus size={14} /> New
+      </button>
 
       {
         /* Open Menu */
@@ -378,6 +397,13 @@ function TopToolbar() {
         <FileEdit size={14} /> DXF
       </button>
       <button
+        className="px-3 py-1.5 text-xs uppercase font-bold tracking-wider bg-[#16a34a] text-white hover:bg-[#15803d] rounded transition-colors flex items-center gap-1.5"
+        onClick={handleShowPrice}
+        title="Calculate drawing price"
+      >
+        <Calculator size={14} /> Show Price
+      </button>
+      <button
         className="px-4 py-1.5 text-xs uppercase font-bold tracking-wider bg-[#4a90e2] text-white hover:bg-[#3a7fc2] rounded transition-colors flex items-center gap-1.5"
         onClick={handleExportPng}
         title="Export PNG"
@@ -454,6 +480,31 @@ function TopToolbar() {
             {browserLoading ? "Saving..." : "Save Drawing"}
           </button>
         </div>}
+      </div>
+    </div>}
+    {priceModalOpen && <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center backdrop-blur-sm">
+      <div className="bg-[#1e1f22] border border-[#333] rounded-lg shadow-2xl w-[460px] max-w-[92vw] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-[#333]">
+          <h3 className="text-white font-semibold">Drawing Price</h3>
+          <button onClick={() => setPriceModalOpen(false)} className="text-[#888] hover:text-white transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="p-4 bg-[#141517] flex-1">
+          {priceLoading ? <p className="text-[#777] text-sm py-4 text-center">Calculating price...</p> : priceResult?.items?.length ? <div className="space-y-3">
+            {priceResult.items.map((item) => <div key={item.key} className="flex items-center justify-between gap-4 text-sm border-b border-[#2a2b30] pb-2">
+              <div>
+                <div className="text-white font-medium">{item.label}</div>
+                <div className="text-[#777] text-xs">{item.quantity.toFixed(2)} {item.unit} x {formatMoney(item.rate, priceResult.currency)}</div>
+              </div>
+              <div className="text-white font-semibold">{formatMoney(item.total, priceResult.currency)}</div>
+            </div>)}
+          </div> : <p className="text-[#777] text-sm py-4 text-center">No priced drawing items found. Add drawing objects or set rates in the admin dashboard.</p>}
+        </div>
+        <div className="p-4 border-t border-[#333] flex items-center justify-between bg-[#1e1f22]">
+          <span className="text-[#aaa] text-sm">Total</span>
+          <span className="text-white text-xl font-bold">{formatMoney(priceResult?.total || 0, priceResult?.currency || "INR")}</span>
+        </div>
       </div>
     </div>}
   </div>;

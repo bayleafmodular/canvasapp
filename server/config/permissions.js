@@ -8,6 +8,7 @@ const PERMISSIONS = [
   'users.show',
   'users.create',
   'users.edit',
+  'pricing.edit',
 ];
 
 const adminPermissions = PERMISSIONS.reduce((acc, permission) => {

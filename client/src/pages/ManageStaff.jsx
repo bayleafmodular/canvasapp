@@ -29,6 +29,12 @@ const permissionGroups = [
       ['users.edit', 'Edit'],
     ],
   },
+  {
+    label: 'Pricing',
+    permissions: [
+      ['pricing.edit', 'Edit'],
+    ],
+  },
 ];
 
 const emptyForm = {
