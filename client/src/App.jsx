@@ -12,6 +12,7 @@ import StaffDashboard from './pages/StaffDashboard';
 import UserDashboard from './pages/UserDashboard';
 import ManageUsers from './pages/ManageUsers';
 import ManageStaff from './pages/ManageStaff';
+import ManageOrders from './pages/ManageOrders';
 import Settings from './pages/Settings';
 import CanvasApp from './pages/CanvasApp';
 import PrivateRoute from './components/PrivateRoute';
@@ -42,6 +43,11 @@ function App() {
         <Route path="/admin-dashboard/users" element={
           <PrivateRoute allowedRoles={['admin', 'staff']} requiredPermission="users.show">
             <ManageUsers />
+          </PrivateRoute>
+        } />
+        <Route path="/admin-dashboard/orders" element={
+          <PrivateRoute allowedRoles={['admin', 'staff']}>
+            <ManageOrders />
           </PrivateRoute>
         } />
         <Route path="/staff-dashboard" element={

@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { DraftingCompass, LayoutDashboard, Settings, Users, UserCog } from 'lucide-react';
+import { DraftingCompass, LayoutDashboard, Settings, Users, UserCog, ClipboardList } from 'lucide-react';
 
 const navItems = {
   admin: [
     { label: 'Dashboard', path: '/admin-dashboard', icon: LayoutDashboard, permission: 'dashboard.show' },
     { label: 'Manage Staff', path: '/admin-dashboard/staff', icon: UserCog, permission: 'staff.show' },
     { label: 'Manage Users', path: '/admin-dashboard/users', icon: Users, permission: 'users.show' },
+    { label: 'Orders', path: '/admin-dashboard/orders', icon: ClipboardList },
     { label: 'Canvas App', path: '/canvas-app', icon: DraftingCompass },
     { label: 'Settings', path: '/settings', icon: Settings },
   ],
@@ -13,6 +14,7 @@ const navItems = {
     { label: 'Dashboard', path: '/admin-dashboard', icon: LayoutDashboard, permission: 'dashboard.show' },
     { label: 'Manage Staff', path: '/admin-dashboard/staff', icon: UserCog, permission: 'staff.show' },
     { label: 'Manage Users', path: '/admin-dashboard/users', icon: Users, permission: 'users.show' },
+    { label: 'Orders', path: '/admin-dashboard/orders', icon: ClipboardList },
     { label: 'Canvas App', path: '/canvas-app', icon: DraftingCompass },
     { label: 'Settings', path: '/settings', icon: Settings },
   ],

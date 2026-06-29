@@ -36,3 +36,8 @@ export const getDrawing = (id) => api.get(`/drawings/${id}`);
 export const deleteDrawing = (id) => api.delete(`/drawings/${id}`);
 export const getPricingSettings = () => api.get('/pricing');
 export const updatePricingSettings = (data) => api.patch('/pricing', data);
+
+// Orders APIs
+export const createOrder = (data) => api.post('/orders', data);
+export const getAdminOrders = () => api.get('/admin/orders');
+export const updateAdminOrderStatus = (id, status) => api.patch(`/admin/orders/${id}`, { status });

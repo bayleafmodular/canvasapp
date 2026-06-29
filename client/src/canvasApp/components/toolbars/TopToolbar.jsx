@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useCadStore } from "../../store/useCadStore";
 import { Undo2, Redo2, Grid, Magnet, Ruler, AlignEndHorizontal, Upload, Image, FileJson, FileEdit, CloudUpload, CloudDownload, ChevronDown, Save, FolderOpen, Trash2, X, FilePlus, Calculator } from "lucide-react";
 import { cn, downloadFile } from "../../lib/utils";
-import { createDrawing, deleteDrawing, getDrawing, getDrawings, getPricingSettings } from "../../../services/api";
+import { createDrawing, deleteDrawing, getDrawing, getDrawings, getPricingSettings, createOrder } from "../../../services/api";
 import Drawing from "dxf-writer";
 import { ShapeType } from "../../types";
 import { calculateDrawingPrice } from "../../utils/pricing";
@@ -36,6 +36,22 @@ function TopToolbar() {
   const [priceModalOpen, setPriceModalOpen] = useState(false);
   const [priceLoading, setPriceLoading] = useState(false);
   const [priceResult, setPriceResult] = useState(null);
+
+  // Checkout form states
+  const getCachedUser = () => {
+    try {
+      const u = localStorage.getItem('user');
+      return u ? JSON.parse(u) : {};
+    } catch {
+      return {};
+    }
+  };
+  const [checkoutStep, setCheckoutStep] = useState(false);
+  const [customerName, setCustomerName] = useState(() => getCachedUser().name || "");
+  const [customerEmail, setCustomerEmail] = useState(() => getCachedUser().email || "");
+  const [customerPhone, setCustomerPhone] = useState(() => getCachedUser().phone || "");
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [placingOrder, setPlacingOrder] = useState(false);
   useEffect(() => {
     if (browserModalOpen !== "load") return;
 
@@ -135,7 +151,13 @@ function TopToolbar() {
   const formatMoney = (amount, currency = "INR") => `${currency} ${Number(amount || 0).toFixed(2)}`;
   const handleShowPrice = async () => {
     setPriceModalOpen(true);
+    setCheckoutStep(false);
     setPriceLoading(true);
+    // Refresh pre-filled user details in case profile updated
+    const user = getCachedUser();
+    if (user.name) setCustomerName(user.name);
+    if (user.email) setCustomerEmail(user.email);
+    if (user.phone) setCustomerPhone(user.phone);
     try {
       const { data: pricing } = await getPricingSettings();
       setPriceResult(calculateDrawingPrice(objects, pricing));
@@ -144,6 +166,41 @@ function TopToolbar() {
       setPriceModalOpen(false);
     } finally {
       setPriceLoading(false);
+    }
+  };
+  const handlePlaceOrder = async (e) => {
+    e.preventDefault();
+    if (!customerName.trim() || !customerEmail.trim() || !customerAddress.trim()) {
+      alert("Name, Email, and Address are required!");
+      return;
+    }
+    setPlacingOrder(true);
+    try {
+      // Find loaded drawing name or default
+      const productName = saveName.trim() || "Custom CAD Design Layout";
+      const blueprintType = "custom_drawing";
+
+      await createOrder({
+        customerName: customerName.trim(),
+        email: customerEmail.trim(),
+        phone: customerPhone.trim(),
+        address: customerAddress.trim(),
+        productName,
+        quantity: 1,
+        totalPrice: priceResult.total,
+        blueprintType,
+        drawingData: objects,
+      });
+
+      alert("Order placed successfully! Admins will review it shortly.");
+      setPriceModalOpen(false);
+      setCheckoutStep(false);
+      setCustomerAddress("");
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to place order.");
+    } finally {
+      setPlacingOrder(false);
     }
   };
   const handleSaveJson = () => {
@@ -485,26 +542,126 @@ function TopToolbar() {
     {priceModalOpen && <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center backdrop-blur-sm">
       <div className="bg-[#1e1f22] border border-[#333] rounded-lg shadow-2xl w-[460px] max-w-[92vw] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-[#333]">
-          <h3 className="text-white font-semibold">Drawing Price</h3>
-          <button onClick={() => setPriceModalOpen(false)} className="text-[#888] hover:text-white transition-colors">
+          <h3 className="text-white font-semibold">
+            {checkoutStep ? "Place Drawing Order" : "Drawing Price"}
+          </h3>
+          <button onClick={() => { setPriceModalOpen(false); setCheckoutStep(false); }} className="text-[#888] hover:text-white transition-colors">
             <X size={18} />
           </button>
         </div>
-        <div className="p-4 bg-[#141517] flex-1">
-          {priceLoading ? <p className="text-[#777] text-sm py-4 text-center">Calculating price...</p> : priceResult?.items?.length ? <div className="space-y-3">
-            {priceResult.items.map((item) => <div key={item.key} className="flex items-center justify-between gap-4 text-sm border-b border-[#2a2b30] pb-2">
+
+        {checkoutStep ? (
+          <form onSubmit={handlePlaceOrder} className="flex flex-col flex-1">
+            <div className="p-4 bg-[#141517] space-y-4">
               <div>
-                <div className="text-white font-medium">{item.label}</div>
-                <div className="text-[#777] text-xs">{item.quantity.toFixed(2)} {item.unit} x {formatMoney(item.rate, priceResult.currency)}</div>
+                <label className="block text-xs text-[#aaa] mb-1 font-semibold uppercase tracking-wider">Customer Name</label>
+                <input
+                  type="text"
+                  required
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Enter your name"
+                  className="w-full bg-[#1e1f22] border border-[#444] rounded px-3 py-2 text-white outline-none focus:border-[#4a90e2]"
+                  disabled={placingOrder}
+                />
               </div>
-              <div className="text-white font-semibold">{formatMoney(item.total, priceResult.currency)}</div>
-            </div>)}
-          </div> : <p className="text-[#777] text-sm py-4 text-center">No priced drawing items found. Add drawing objects or set rates in the admin dashboard.</p>}
-        </div>
-        <div className="p-4 border-t border-[#333] flex items-center justify-between bg-[#1e1f22]">
-          <span className="text-[#aaa] text-sm">Total</span>
-          <span className="text-white text-xl font-bold">{formatMoney(priceResult?.total || 0, priceResult?.currency || "INR")}</span>
-        </div>
+              <div>
+                <label className="block text-xs text-[#aaa] mb-1 font-semibold uppercase tracking-wider">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="w-full bg-[#1e1f22] border border-[#444] rounded px-3 py-2 text-white outline-none focus:border-[#4a90e2]"
+                  disabled={placingOrder}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-[#aaa] mb-1 font-semibold uppercase tracking-wider">Phone Number</label>
+                <input
+                  type="text"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="Enter phone number (optional)"
+                  className="w-full bg-[#1e1f22] border border-[#444] rounded px-3 py-2 text-white outline-none focus:border-[#4a90e2]"
+                  disabled={placingOrder}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-[#aaa] mb-1 font-semibold uppercase tracking-wider">Delivery/Shipping Address</label>
+                <textarea
+                  required
+                  rows={3}
+                  value={customerAddress}
+                  onChange={(e) => setCustomerAddress(e.target.value)}
+                  placeholder="Enter complete billing/delivery address"
+                  className="w-full bg-[#1e1f22] border border-[#444] rounded px-3 py-2 text-white outline-none focus:border-[#4a90e2] resize-none"
+                  disabled={placingOrder}
+                />
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-[#333] flex items-center justify-between bg-[#1e1f22]">
+              <button
+                type="button"
+                onClick={() => setCheckoutStep(false)}
+                className="px-4 py-2 text-sm text-[#ccc] hover:text-white"
+                disabled={placingOrder}
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={placingOrder}
+                className="px-4 py-2 text-sm bg-[#16a34a] hover:bg-[#15803d] text-white rounded font-bold transition-colors"
+              >
+                {placingOrder ? "Placing Order..." : `Confirm Order (${formatMoney(priceResult?.total || 0, priceResult?.currency)})`}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <div className="p-4 bg-[#141517] flex-1 overflow-y-auto max-h-[50vh]">
+              {priceLoading ? (
+                <p className="text-[#777] text-sm py-4 text-center">Calculating price...</p>
+              ) : priceResult?.items?.length ? (
+                <div className="space-y-3">
+                  {priceResult.items.map((item) => (
+                    <div key={item.key} className="flex items-center justify-between gap-4 text-sm border-b border-[#2a2b30] pb-2">
+                      <div>
+                        <div className="text-white font-medium">{item.label}</div>
+                        <div className="text-[#777] text-xs">
+                          {item.quantity.toFixed(2)} {item.unit} x {formatMoney(item.rate, priceResult.currency)}
+                        </div>
+                      </div>
+                      <div className="text-white font-semibold">{formatMoney(item.total, priceResult.currency)}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[#777] text-sm py-4 text-center">
+                  No priced drawing items found. Add drawing objects or set rates in the admin dashboard.
+                </p>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-[#333] flex items-center justify-between bg-[#1e1f22]">
+              <div className="flex flex-col">
+                <span className="text-[#aaa] text-xs">Total Price</span>
+                <span className="text-white text-xl font-bold">{formatMoney(priceResult?.total || 0, priceResult?.currency || "INR")}</span>
+              </div>
+              {priceResult?.total > 0 && !priceLoading && (
+                <button
+                  onClick={() => setCheckoutStep(true)}
+                  className="px-4 py-2 bg-[#4a90e2] text-white hover:bg-[#3a7fc2] rounded font-bold text-sm transition-colors"
+                >
+                  Place Order
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>}
   </div>;

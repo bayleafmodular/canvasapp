@@ -14,6 +14,10 @@ const {
   updateStaff,
   createManagedUser,
 } = require('../services/users');
+const {
+  listOrders,
+  updateOrderStatus,
+} = require('../services/orders');
 
 const router = express.Router();
 
@@ -148,6 +152,35 @@ router.patch('/staff/:id', protect, role('admin', 'staff'), can('staff.edit'), a
     const status = err.code === '23505' ? 400 : 500;
     const message = err.code === '23505' ? 'Email already in use' : 'Server error';
     res.status(status).json({ message });
+  }
+});
+
+// GET /api/admin/orders
+router.get('/orders', protect, role('admin', 'staff'), async (req, res) => {
+  try {
+    const orders = await listOrders();
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    const status = err.statusCode || 500;
+    res.status(status).json({ message: err.message || 'Server error' });
+  }
+});
+
+// PATCH /api/admin/orders/:id
+router.patch('/orders/:id', protect, role('admin', 'staff'), async (req, res) => {
+  const { status } = req.body;
+  if (!status || !['Pending', 'Processing', 'Completed'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid or missing status' });
+  }
+  try {
+    const order = await updateOrderStatus(req.params.id, status);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    res.json(order);
+  } catch (err) {
+    console.error(err);
+    const status = err.statusCode || 500;
+    res.status(status).json({ message: err.message || 'Server error' });
   }
 });
 
