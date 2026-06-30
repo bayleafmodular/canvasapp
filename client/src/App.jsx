@@ -50,12 +50,22 @@ function App() {
             <ManageOrders />
           </PrivateRoute>
         } />
+        <Route path="/admin-dashboard/orders/:id" element={
+          <PrivateRoute allowedRoles={['admin', 'staff']}>
+            <ManageOrders />
+          </PrivateRoute>
+        } />
         <Route path="/staff-dashboard" element={
           <PrivateRoute allowedRoles={['staff']}>
             <StaffDashboard />
           </PrivateRoute>
         } />
         <Route path="/user-dashboard" element={
+          <PrivateRoute allowedRoles={['user']}>
+            <UserDashboard />
+          </PrivateRoute>
+        } />
+        <Route path="/user-dashboard/orders/:id" element={
           <PrivateRoute allowedRoles={['user']}>
             <UserDashboard />
           </PrivateRoute>

@@ -182,14 +182,17 @@ const toPublicOrder = (row) => {
     drawingData: row.drawing_data,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    remarks: row.remarks || '',
   };
 };
 
 const isMissingOrdersTableError = (error) =>
-  error?.code === '42P01' ||
-  error?.code === 'PGRST116' ||
-  error?.code === 'PGRST205' ||
-  /orders/i.test(error?.message || '');
+  (error?.code === '42P01' ||
+   error?.code === 'PGRST116' ||
+   error?.code === 'PGRST205' ||
+   /relation ".*orders" does not exist/i.test(error?.message || '') ||
+   /could not find the relation/i.test(error?.message || '')) &&
+  error?.code !== 'PGRST204';
 
 const listOrders = async () => {
   try {
@@ -204,6 +207,29 @@ const listOrders = async () => {
     if (isMissingOrdersTableError(err)) {
       console.warn('Orders table is missing in Supabase. Falling back to local in-memory mock data.');
       return localOrders;
+    }
+    throw err;
+  }
+};
+
+const listUserOrders = async (userId, email) => {
+  try {
+    const { data, error } = await supabase
+      .from(ORDERS_TABLE)
+      .select('*')
+      .eq('user_id', userId)
+      .order('order_date', { ascending: false });
+
+    if (error) throw error;
+    return data.map((row) => toPublicOrder(row));
+  } catch (err) {
+    if (isMissingOrdersTableError(err)) {
+      console.warn('Orders table is missing in Supabase. Filtering local mock data.');
+      return localOrders.filter(
+        (o) =>
+          o.userId === userId ||
+          (o.email && email && o.email.toLowerCase() === email.toLowerCase())
+      );
     }
     throw err;
   }
@@ -241,6 +267,7 @@ const createOrder = async (userId, details) => {
       const localId = `ORD-${year}-${String(count).padStart(3, '0')}`;
       const newOrder = {
         id: localId,
+        userId: userId,
         customerName: details.customerName,
         email: details.email,
         phone: details.phone,
@@ -253,7 +280,8 @@ const createOrder = async (userId, details) => {
         blueprintType: details.blueprintType,
         drawingData: details.drawingData || null,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        remarks: '',
       };
       localOrders.unshift(newOrder); // Add to beginning of array
       return newOrder;
@@ -262,30 +290,58 @@ const createOrder = async (userId, details) => {
   }
 };
 
-const updateOrderStatus = async (id, status) => {
+const updateOrderStatus = async (id, status, remarks) => {
   try {
+    const updateData = {
+      status,
+      updated_at: new Date().toISOString(),
+    };
+    if (remarks !== undefined) {
+      updateData.remarks = remarks;
+    }
+
     const { data, error } = await supabase
       .from(ORDERS_TABLE)
-      .update({
-        status,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id)
       .select('*')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      // Catch undefined/missing column error (PostgreSQL undefined_column is '42703' or PostgREST is 'PGRST204')
+      if ((error.code === '42703' || error.code === 'PGRST204') && remarks !== undefined) {
+        console.warn('Supabase orders table does not contain remarks column. Falling back to status-only update.');
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from(ORDERS_TABLE)
+          .update({
+            status,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id)
+          .select('*')
+          .single();
+
+        if (fallbackError) throw fallbackError;
+        const publicOrder = toPublicOrder(fallbackData);
+        if (publicOrder) publicOrder.remarks = remarks; // Attach remarks locally for response
+        return publicOrder;
+      }
+      throw error;
+    }
     return toPublicOrder(data);
   } catch (err) {
     if (isMissingOrdersTableError(err)) {
       console.warn('Orders table is missing in Supabase. Updating order in local in-memory storage.');
-      const orderIndex = localOrders.findIndex(o => o.id === id);
+      const orderIndex = localOrders.findIndex((o) => o.id === id);
       if (orderIndex === -1) return null;
       localOrders[orderIndex] = {
         ...localOrders[orderIndex],
         status,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
+      if (remarks !== undefined) {
+        localOrders[orderIndex].remarks = remarks;
+      }
       return localOrders[orderIndex];
     }
     throw err;
@@ -294,6 +350,7 @@ const updateOrderStatus = async (id, status) => {
 
 module.exports = {
   listOrders,
+  listUserOrders,
   createOrder,
   updateOrderStatus,
 };

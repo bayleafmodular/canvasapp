@@ -1,8 +1,21 @@
 const express = require('express');
 const protect = require('../middleware/authMiddleware');
-const { createOrder } = require('../services/orders');
+const { createOrder, listUserOrders } = require('../services/orders');
 
 const router = express.Router();
+
+// GET /api/orders
+// Placed by logged-in users to list their own orders
+router.get('/', protect, async (req, res) => {
+  try {
+    const orders = await listUserOrders(req.user.id, req.user.email);
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    const status = err.statusCode || 500;
+    res.status(status).json({ message: err.message || 'Server error' });
+  }
+});
 
 // POST /api/orders
 // Placed by logged-in users

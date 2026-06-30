@@ -19,6 +19,7 @@ export default function AdminLogin() {
     }
 
     localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
     localStorage.setItem('role', user.role);
     localStorage.setItem('permissions', JSON.stringify(user.permissions || {}));
 

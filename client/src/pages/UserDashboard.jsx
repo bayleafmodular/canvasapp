@@ -1,51 +1,95 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
-
-const stats = [
-  { label: 'Total Logins', value: '—', bg: 'bg-indigo-500' },
-  { label: 'Last Active', value: '—', bg: 'bg-teal-500' },
-];
-
-const activities = [
-  'Logged in successfully',
-  'Profile viewed',
-  'Email verified',
-  'Account created',
-];
+import { getUserOrders } from '../services/api';
+import OrderTable from '../components/orders/OrderTable';
+import OrderDetails from '../components/orders/OrderDetails';
 
 export default function UserDashboard() {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const { id } = useParams();
+
+  const selectedOrder = orders.find(order => order.id === id) || null;
+  const hasIdParam = Boolean(id);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const res = await getUserOrders();
+        if (!cancelled) {
+          setOrders(res.data);
+          setError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to load user orders:", err);
+          setError(err.response?.data?.message || "Failed to load your orders.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchOrders();
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <Layout>
       <div className="space-y-6">
-
-        {/* Welcome */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-2xl font-bold text-gray-800">User Dashboard</h2>
-          <p className="text-gray-500 text-sm mt-1">Welcome to your personal space. Here's a summary of your account.</p>
-        </div>
-
-        {/* Stats */}
-        {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {stats.map(({ label, value, bg }) => (
-            <div key={label} className={`${bg} rounded-xl shadow-md p-5 text-white`}>
-              <p className="text-sm font-medium opacity-80">{label}</p>
-              <p className="text-4xl font-bold mt-1">{value}</p>
+        {!hasIdParam ? (
+          <>
+            {/* Welcome & Info */}
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">My Orders</h2>
+                <p className="text-gray-500 text-sm mt-1">Track status and review details of your submitted blueprints.</p>
+              </div>
             </div>
-          ))}
-        </div> */}
 
-        {/* Activity */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h3 className="text-base font-semibold text-gray-700 mb-4">Recent Activity</h3>
-          <ul className="space-y-3">
-            {activities.map((item) => (
-              <li key={item} className="flex items-start gap-3 border-b border-gray-50 pb-3 last:border-0 last:pb-0">
-                <span className="mt-1.5 w-2 h-2 rounded-full bg-indigo-400 shrink-0" />
-                <span className="text-sm text-gray-600">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
+            {/* Shared Order Table */}
+            <OrderTable
+              orders={orders}
+              loading={loading}
+              error={error}
+              isAdmin={false}
+              onView={(order) => navigate(`/user-dashboard/orders/${order.id}`)}
+            />
+          </>
+        ) : (
+          /* Shared Detailed View */
+          loading ? (
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 flex items-center justify-center min-h-[300px]">
+              <div className="flex items-center gap-2 text-gray-500 font-medium animate-pulse">
+                <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                Loading order details...
+              </div>
+            </div>
+          ) : !selectedOrder ? (
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 text-center py-12">
+              <p className="text-gray-500 text-sm font-semibold">Order not found.</p>
+              <button 
+                onClick={() => navigate('/user-dashboard')}
+                className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors"
+              >
+                Back to Dashboard
+              </button>
+            </div>
+          ) : (
+            <OrderDetails
+              order={selectedOrder}
+              isAdmin={false}
+              onBack={() => navigate('/user-dashboard')}
+            />
+          )
+        )}
       </div>
     </Layout>
   );

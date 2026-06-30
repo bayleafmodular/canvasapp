@@ -561,8 +561,10 @@ function TopToolbar() {
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Enter your name"
-                  className="w-full bg-[#1e1f22] border border-[#444] rounded px-3 py-2 text-white outline-none focus:border-[#4a90e2]"
-                  disabled={placingOrder}
+                  className="w-full bg-[#1e1f22] border border-[#444] rounded px-3 py-2 text-white outline-none focus:border-[#4a90e2] cursor-not-allowed"
+                  // disabled={placingOrder}
+                  disabled={true}
+              
                 />
               </div>
               <div>
@@ -573,8 +575,9 @@ function TopToolbar() {
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className="w-full bg-[#1e1f22] border border-[#444] rounded px-3 py-2 text-white outline-none focus:border-[#4a90e2]"
-                  disabled={placingOrder}
+                  className="w-full bg-[#1e1f22] border border-[#444] rounded px-3 py-2 text-white outline-none focus:border-[#4a90e2] cursor-not-allowed"
+                  // disabled={placingOrder}
+                  disabled
                 />
               </div>
               <div>

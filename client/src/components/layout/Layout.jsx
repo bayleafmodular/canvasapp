@@ -7,13 +7,55 @@ import { getMe } from '../../services/api';
 
 export default function Layout({ children, fullScreen = false }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const cachedUser = localStorage.getItem('user');
+      if (cachedUser) {
+        return JSON.parse(cachedUser);
+      }
+      const role = localStorage.getItem('role');
+      const permissions = JSON.parse(localStorage.getItem('permissions') || '{}');
+      if (role) {
+        return { role, permissions };
+      }
+    } catch {
+      // Fallback if localStorage read fails
+    }
+    return null;
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
+    const handleProfileUpdate = () => {
+      try {
+        const cachedUser = localStorage.getItem('user');
+        if (cachedUser) {
+          setUser(JSON.parse(cachedUser));
+        }
+      } catch (e) {
+        console.error('Error handling profile update event:', e);
+      }
+    };
+
+    window.addEventListener('user-profile-updated', handleProfileUpdate);
+
     getMe()
-      .then((res) => setUser(res.data))
-      .catch(() => navigate('/login'));
+      .then((res) => {
+        setUser(res.data);
+        localStorage.setItem('user', JSON.stringify(res.data));
+        localStorage.setItem('role', res.data.role);
+        localStorage.setItem('permissions', JSON.stringify(res.data.permissions || {}));
+      })
+      .catch(() => {
+        localStorage.removeItem('user');
+        localStorage.removeItem('role');
+        localStorage.removeItem('permissions');
+        navigate('/login');
+      });
+
+    return () => {
+      window.removeEventListener('user-profile-updated', handleProfileUpdate);
+    };
   }, [navigate]);
 
   return (

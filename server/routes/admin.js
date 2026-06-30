@@ -169,18 +169,19 @@ router.get('/orders', protect, role('admin', 'staff'), async (req, res) => {
 
 // PATCH /api/admin/orders/:id
 router.patch('/orders/:id', protect, role('admin', 'staff'), async (req, res) => {
-  const { status } = req.body;
-  if (!status || !['Pending', 'Processing', 'Completed'].includes(status)) {
+  const { status, remarks } = req.body;
+  const allowedStatuses = ['Pending', 'In Review', 'Processing', 'Approved', 'Rejected', 'Completed'];
+  if (!status || !allowedStatuses.includes(status)) {
     return res.status(400).json({ message: 'Invalid or missing status' });
   }
   try {
-    const order = await updateOrderStatus(req.params.id, status);
+    const order = await updateOrderStatus(req.params.id, status, remarks);
     if (!order) return res.status(404).json({ message: 'Order not found' });
     res.json(order);
   } catch (err) {
     console.error(err);
-    const status = err.statusCode || 500;
-    res.status(status).json({ message: err.message || 'Server error' });
+    const statusVal = err.statusCode || 500;
+    res.status(statusVal).json({ message: err.message || 'Server error' });
   }
 });
 

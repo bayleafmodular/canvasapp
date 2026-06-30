@@ -40,4 +40,5 @@ export const updatePricingSettings = (data) => api.patch('/pricing', data);
 // Orders APIs
 export const createOrder = (data) => api.post('/orders', data);
 export const getAdminOrders = () => api.get('/admin/orders');
-export const updateAdminOrderStatus = (id, status) => api.patch(`/admin/orders/${id}`, { status });
+export const updateAdminOrderStatus = (id, status, remarks) => api.patch(`/admin/orders/${id}`, { status, remarks });
+export const getUserOrders = () => api.get('/orders');

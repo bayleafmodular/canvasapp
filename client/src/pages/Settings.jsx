@@ -50,6 +50,8 @@ export default function Settings() {
     try {
       const res = await updateProfile(profile);
       setUser(res.data);
+      localStorage.setItem('user', JSON.stringify(res.data));
+      window.dispatchEvent(new Event('user-profile-updated'));
       toast.success('Profile updated');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update profile');
