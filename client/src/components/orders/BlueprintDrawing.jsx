@@ -67,17 +67,31 @@ const getDistance = (p1, p2) => Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 
 const formatMeasurement = (value) => Number(value || 0).toFixed(1);
 
 // Custom Drawing SVG Renderer for displaying user CAD drawings
+<<<<<<< HEAD
 function CustomDrawingRenderer({ objects }) {
   const bbox = useMemo(() => getBoundingBox(objects), [objects]);
+=======
+function CustomDrawingRenderer({ objects, lightMode }) {
+  const bbox = useMemo(() => getBoundingBox(objects), [objects]);
+  const labelColor = lightMode ? "#1d4ed8" : "#4a90e2";
+>>>>>>> 89a0e65 (Template functionality)
 
   return (
     <svg
       viewBox={`${bbox.minX} ${bbox.minY} ${bbox.width} ${bbox.height}`}
+<<<<<<< HEAD
       className="w-full h-full text-indigo-900 bg-[#0f172a]"
     >
       <defs>
         <pattern id="grid-custom-shared" width="25" height="25" patternUnits="userSpaceOnUse">
           <circle cx="1" cy="1" r="1" fill="#333f50" />
+=======
+      className={`w-full h-full ${lightMode ? 'text-slate-800 bg-white border border-gray-100' : 'text-indigo-900 bg-[#0f172a]'}`}
+    >
+      <defs>
+        <pattern id="grid-custom-shared" width="25" height="25" patternUnits="userSpaceOnUse">
+          <circle cx="1" cy="1" r="1" fill={lightMode ? "#cbd5e1" : "#333f50"} />
+>>>>>>> 89a0e65 (Template functionality)
         </pattern>
       </defs>
       <rect
@@ -89,7 +103,18 @@ function CustomDrawingRenderer({ objects }) {
       />
 
       {objects.map((obj, idx) => {
+<<<<<<< HEAD
         const stroke = obj.stroke || "#38bdf8";
+=======
+        let stroke = obj.stroke || "#38bdf8";
+        if (lightMode) {
+          if (stroke === "#ffffff" || stroke === "#9ca3af" || stroke === "#38bdf8") {
+            stroke = "#1e40af";
+          } else {
+            stroke = "#0f172a";
+          }
+        }
+>>>>>>> 89a0e65 (Template functionality)
         const strokeWidth = obj.strokeWidth || 2;
         const ox = obj.x || 0;
         const oy = obj.y || 0;
@@ -124,7 +149,11 @@ function CustomDrawingRenderer({ objects }) {
                 const nx = -dy / len;
                 const ny = dx / len;
                 const offset = 6;
+<<<<<<< HEAD
                 const edgeStroke = stroke === "#9ca3af" ? "#d1d5db" : stroke;
+=======
+                const edgeStroke = lightMode ? "#475569" : (stroke === "#9ca3af" ? "#d1d5db" : stroke);
+>>>>>>> 89a0e65 (Template functionality)
                 shapeElement = (
                   <g>
                     <line
@@ -134,7 +163,11 @@ function CustomDrawingRenderer({ objects }) {
                       y2={y2}
                       stroke={stroke}
                       strokeWidth={strokeWidth}
+<<<<<<< HEAD
                       opacity={0.3}
+=======
+                      opacity={lightMode ? 0.15 : 0.3}
+>>>>>>> 89a0e65 (Template functionality)
                       strokeLinecap="round"
                     />
                     <line
@@ -311,7 +344,11 @@ function CustomDrawingRenderer({ objects }) {
               <text
                 x={(pt1.x + pt2.x) / 2 + 10}
                 y={(pt1.y + pt2.y) / 2 - 10}
+<<<<<<< HEAD
                 fill="#4a90e2"
+=======
+                fill={labelColor}
+>>>>>>> 89a0e65 (Template functionality)
                 fontSize={10}
                 fontFamily="monospace"
                 fontWeight="bold"
@@ -331,7 +368,11 @@ function CustomDrawingRenderer({ objects }) {
               <text
                 x={rx + rw / 2}
                 y={ry - 8}
+<<<<<<< HEAD
                 fill="#4a90e2"
+=======
+                fill={labelColor}
+>>>>>>> 89a0e65 (Template functionality)
                 fontSize={10}
                 fontFamily="monospace"
                 fontWeight="bold"
@@ -342,7 +383,11 @@ function CustomDrawingRenderer({ objects }) {
               <text
                 x={rx + rw + 8}
                 y={ry + rh / 2}
+<<<<<<< HEAD
                 fill="#4a90e2"
+=======
+                fill={labelColor}
+>>>>>>> 89a0e65 (Template functionality)
                 fontSize={10}
                 fontFamily="monospace"
                 fontWeight="bold"
@@ -359,7 +404,11 @@ function CustomDrawingRenderer({ objects }) {
               <text
                 x={obj.radius + 8}
                 y={0}
+<<<<<<< HEAD
                 fill="#4a90e2"
+=======
+                fill={labelColor}
+>>>>>>> 89a0e65 (Template functionality)
                 fontSize={10}
                 fontFamily="monospace"
                 fontWeight="bold"
@@ -382,14 +431,21 @@ function CustomDrawingRenderer({ objects }) {
 }
 
 // Blueprint SVG Drawer to render real vector floorplans interactively
+<<<<<<< HEAD
 export default function BlueprintDrawing({ type, drawingData }) {
   if (drawingData && Array.isArray(drawingData) && drawingData.length > 0) {
     return <CustomDrawingRenderer objects={drawingData} />;
+=======
+export default function BlueprintDrawing({ type, drawingData, lightMode = false }) {
+  if (drawingData && Array.isArray(drawingData) && drawingData.length > 0) {
+    return <CustomDrawingRenderer objects={drawingData} lightMode={lightMode} />;
+>>>>>>> 89a0e65 (Template functionality)
   }
 
   switch (type) {
     case 'house_2bhk':
       return (
+<<<<<<< HEAD
         <svg viewBox="0 0 400 300" className="w-full h-full text-indigo-900 bg-slate-900">
           <defs>
             <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -416,10 +472,39 @@ export default function BlueprintDrawing({ type, drawingData }) {
           <text x="200" y="12" fill="#94a3b8" fontSize="10" fontFamily="monospace" textAnchor="middle">16.00 m</text>
           <line x1="20" y1="30" x2="20" y2="270" stroke="#475569" strokeWidth="1" strokeDasharray="4" />
           <text x="12" y="150" fill="#94a3b8" fontSize="10" fontFamily="monospace" textAnchor="middle" transform="rotate(-90 12 150)">12.00 m</text>
+=======
+        <svg viewBox="0 0 400 300" className={`w-full h-full ${lightMode ? 'text-slate-800 bg-white border border-gray-100' : 'text-indigo-900 bg-slate-900'}`}>
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke={lightMode ? "#f1f5f9" : "#1e293b"} strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="400" height="300" fill="url(#grid)" />
+          <rect x="40" y="30" width="320" height="240" fill="none" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="4" />
+          <line x1="200" y1="30" x2="200" y2="270" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="3" />
+          <line x1="40" y1="150" x2="200" y2="150" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="3" />
+          <line x1="200" y1="120" x2="360" y2="120" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="3" />
+
+          <text x="120" y="90" fill={lightMode ? "#0284c7" : "#38bdf8"} fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">BEDROOM 1</text>
+          <text x="120" y="210" fill={lightMode ? "#0284c7" : "#38bdf8"} fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">LIVING ROOM</text>
+          <text x="280" y="75" fill={lightMode ? "#0284c7" : "#38bdf8"} fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">BEDROOM 2</text>
+          <text x="280" y="195" fill={lightMode ? "#0284c7" : "#38bdf8"} fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">KITCHEN</text>
+
+          <path d="M 200 90 A 30 30 0 0 1 170 120" fill="none" stroke={lightMode ? "#e11d48" : "#f43f5e"} strokeWidth="2" />
+          <line x1="200" y1="90" x2="200" y2="120" stroke={lightMode ? "#e11d48" : "#f43f5e"} strokeWidth="2" />
+          <path d="M 200 210 A 30 30 0 0 0 230 240" fill="none" stroke={lightMode ? "#e11d48" : "#f43f5e"} strokeWidth="2" />
+          <line x1="200" y1="210" x2="200" y2="240" stroke={lightMode ? "#e11d48" : "#f43f5e"} strokeWidth="2" />
+
+          <line x1="40" y1="15" x2="360" y2="15" stroke={lightMode ? "#64748b" : "#475569"} strokeWidth="1" strokeDasharray="4" />
+          <text x="200" y="12" fill={lightMode ? "#475569" : "#94a3b8"} fontSize="10" fontFamily="monospace" textAnchor="middle">16.00 m</text>
+          <line x1="20" y1="30" x2="20" y2="270" stroke={lightMode ? "#64748b" : "#475569"} strokeWidth="1" strokeDasharray="4" />
+          <text x="12" y="150" fill={lightMode ? "#475569" : "#94a3b8"} fontSize="10" fontFamily="monospace" textAnchor="middle" transform="rotate(-90 12 150)">12.00 m</text>
+>>>>>>> 89a0e65 (Template functionality)
         </svg>
       );
     case 'office':
       return (
+<<<<<<< HEAD
         <svg viewBox="0 0 400 300" className="w-full h-full text-indigo-900 bg-slate-900">
           <defs>
             <pattern id="grid-office" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -432,12 +517,27 @@ export default function BlueprintDrawing({ type, drawingData }) {
           <rect x="30" y="30" width="120" height="100" fill="none" stroke="#94a3b8" strokeWidth="3" />
           <rect x="30" y="170" width="120" height="100" fill="none" stroke="#94a3b8" strokeWidth="3" />
           <rect x="250" y="30" width="120" height="240" fill="none" stroke="#94a3b8" strokeWidth="3" />
+=======
+        <svg viewBox="0 0 400 300" className={`w-full h-full ${lightMode ? 'text-slate-800 bg-white border border-gray-100' : 'text-indigo-900 bg-slate-900'}`}>
+          <defs>
+            <pattern id="grid-office" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke={lightMode ? "#f1f5f9" : "#1e293b"} strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="400" height="300" fill="url(#grid-office)" />
+          <rect x="30" y="30" width="340" height="240" fill="none" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="4" />
+
+          <rect x="30" y="30" width="120" height="100" fill="none" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="3" />
+          <rect x="30" y="170" width="120" height="100" fill="none" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="3" />
+          <rect x="250" y="30" width="120" height="240" fill="none" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="3" />
+>>>>>>> 89a0e65 (Template functionality)
 
           <line x1="170" y1="100" x2="210" y2="100" stroke="#475569" strokeWidth="2" />
           <line x1="170" y1="150" x2="210" y2="150" stroke="#475569" strokeWidth="2" />
           <line x1="170" y1="200" x2="210" y2="200" stroke="#475569" strokeWidth="2" />
           <line x1="190" y1="100" x2="190" y2="200" stroke="#475569" strokeWidth="2" />
 
+<<<<<<< HEAD
           <text x="90" y="80" fill="#38bdf8" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">CONFERENCE</text>
           <text x="90" y="220" fill="#38bdf8" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">MANAGER</text>
           <text x="310" y="150" fill="#38bdf8" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">OPEN OFFICE</text>
@@ -445,10 +545,20 @@ export default function BlueprintDrawing({ type, drawingData }) {
 
           <rect x="185" y="45" width="10" height="10" fill="#38bdf8" />
           <rect x="185" y="245" width="10" height="10" fill="#38bdf8" />
+=======
+          <text x="90" y="80" fill={lightMode ? "#0284c7" : "#38bdf8"} fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">CONFERENCE</text>
+          <text x="90" y="220" fill={lightMode ? "#0284c7" : "#38bdf8"} fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">MANAGER</text>
+          <text x="310" y="150" fill={lightMode ? "#0284c7" : "#38bdf8"} fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">OPEN OFFICE</text>
+          <text x="190" y="70" fill={lightMode ? "#7c3aed" : "#a78bfa"} fontSize="10" fontFamily="monospace" textAnchor="middle">CUBICLES</text>
+
+          <rect x="185" y="45" width="10" height="10" fill={lightMode ? "#0284c7" : "#38bdf8"} />
+          <rect x="185" y="245" width="10" height="10" fill={lightMode ? "#0284c7" : "#38bdf8"} />
+>>>>>>> 89a0e65 (Template functionality)
         </svg>
       );
     case 'warehouse':
       return (
+<<<<<<< HEAD
         <svg viewBox="0 0 400 300" className="w-full h-full text-indigo-900 bg-slate-900">
           <rect width="400" height="300" fill="#0f172a" />
           <rect x="20" y="20" width="360" height="260" fill="none" stroke="#475569" strokeWidth="3" strokeDasharray="8 4" />
@@ -465,10 +575,29 @@ export default function BlueprintDrawing({ type, drawingData }) {
           <text x="160" y="150" fill="#475569" fontSize="10" fontFamily="monospace" textAnchor="middle" transform="rotate(-90 160 150)">AISLE B</text>
           <text x="240" y="150" fill="#475569" fontSize="10" fontFamily="monospace" textAnchor="middle" transform="rotate(-90 240 150)">AISLE C</text>
           <text x="180" y="28" fill="#10b981" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">LOADING DOCK</text>
+=======
+        <svg viewBox="0 0 400 300" className={`w-full h-full ${lightMode ? 'text-slate-800 bg-white border border-gray-200' : 'text-indigo-900 bg-slate-900'}`}>
+          <rect width="400" height="300" fill={lightMode ? "#f8fafc" : "#0f172a"} />
+          <rect x="20" y="20" width="360" height="260" fill="none" stroke={lightMode ? "#64748b" : "#475569"} strokeWidth="3" strokeDasharray="8 4" />
+          <rect x="30" y="30" width="340" height="240" fill="none" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="4" />
+
+          <rect x="60" y="60" width="40" height="180" fill="none" stroke={lightMode ? "#475569" : "#64748b"} strokeWidth="2" />
+          <rect x="140" y="60" width="40" height="180" fill="none" stroke={lightMode ? "#475569" : "#64748b"} strokeWidth="2" />
+          <rect x="220" y="60" width="40" height="180" fill="none" stroke={lightMode ? "#475569" : "#64748b"} strokeWidth="2" />
+
+          <rect x="300" y="200" width="70" height="70" fill="none" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="3" />
+          <text x="335" y="240" fill={lightMode ? "#0284c7" : "#38bdf8"} fontSize="10" fontFamily="monospace" textAnchor="middle" fontWeight="bold">OFFICE</text>
+
+          <text x="80" y="150" fill={lightMode ? "#475569" : "#475569"} fontSize="10" fontFamily="monospace" textAnchor="middle" transform="rotate(-90 80 150)">AISLE A</text>
+          <text x="160" y="150" fill={lightMode ? "#475569" : "#475569"} fontSize="10" fontFamily="monospace" textAnchor="middle" transform="rotate(-90 160 150)">AISLE B</text>
+          <text x="240" y="150" fill={lightMode ? "#475569" : "#475569"} fontSize="10" fontFamily="monospace" textAnchor="middle" transform="rotate(-90 240 150)">AISLE C</text>
+          <text x="180" y="28" fill={lightMode ? "#059669" : "#10b981"} fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">LOADING DOCK</text>
+>>>>>>> 89a0e65 (Template functionality)
         </svg>
       );
     default:
       return (
+<<<<<<< HEAD
         <svg viewBox="0 0 400 300" className="w-full h-full text-indigo-900 bg-slate-900">
           <defs>
             <pattern id="grid-default" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -485,6 +614,24 @@ export default function BlueprintDrawing({ type, drawingData }) {
           <text x="275" y="100" fill="#38bdf8" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">ZONE B</text>
           <text x="125" y="210" fill="#38bdf8" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">ZONE C</text>
           <text x="275" y="210" fill="#38bdf8" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">ZONE D</text>
+=======
+        <svg viewBox="0 0 400 300" className={`w-full h-full ${lightMode ? 'text-slate-800 bg-white border border-gray-200' : 'text-indigo-900 bg-slate-900'}`}>
+          <defs>
+            <pattern id="grid-default" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke={lightMode ? "#f1f5f9" : "#1e293b"} strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="400" height="300" fill="url(#grid-default)" />
+          <rect x="50" y="40" width="300" height="220" fill="none" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="4" />
+          <line x1="50" y1="150" x2="350" y2="150" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="3" />
+          <line x1="200" y1="40" x2="200" y2="260" stroke={lightMode ? "#334155" : "#94a3b8"} strokeWidth="3" />
+          <circle cx="200" cy="150" r="30" fill="none" stroke={lightMode ? "#0284c7" : "#38bdf8"} strokeWidth="2" strokeDasharray="5 3" />
+
+          <text x="125" y="100" fill={lightMode ? "#0284c7" : "#38bdf8"} fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">ZONE A</text>
+          <text x="275" y="100" fill={lightMode ? "#0284c7" : "#38bdf8"} fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">ZONE B</text>
+          <text x="125" y="210" fill={lightMode ? "#0284c7" : "#38bdf8"} fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">ZONE C</text>
+          <text x="275" y="210" fill={lightMode ? "#0284c7" : "#38bdf8"} fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">ZONE D</text>
+>>>>>>> 89a0e65 (Template functionality)
         </svg>
       );
   }

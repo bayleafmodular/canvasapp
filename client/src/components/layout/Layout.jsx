@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
 import { getMe } from '../../services/api';
+import { useCadStore } from '../../canvasApp/store/useCadStore';
 
 export default function Layout({ children, fullScreen = false }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -50,6 +51,15 @@ export default function Layout({ children, fullScreen = false }) {
         localStorage.removeItem('user');
         localStorage.removeItem('role');
         localStorage.removeItem('permissions');
+<<<<<<< HEAD
+=======
+        localStorage.removeItem('precision-cad-storage');
+        try {
+          useCadStore.getState().clearDrawing();
+        } catch (e) {
+          // ignore
+        }
+>>>>>>> 89a0e65 (Template functionality)
         navigate('/login');
       });
 

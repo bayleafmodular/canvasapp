@@ -7,12 +7,13 @@ import {
   Square,
   Circle,
   Pencil,
-  Trash2
+  Trash2,
+  LayoutTemplate
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { PolylineIcon, ArcIcon, WallIcon, BeamIcon, LintelIcon } from "./Icons";
 function LeftToolbar() {
-  const { activeTool, setTool, deleteSelected } = useCadStore();
+  const { activeTool, setTool, deleteSelected, isTemplateDrawerOpen, setTemplateDrawerOpen } = useCadStore();
   const toolButtons = [
     { tool: Tool.SELECT, icon: MousePointer2, label: "Select & Move (V)" },
     { tool: Tool.HAND, icon: Hand, label: "Pan Canvas (H)" },
@@ -51,11 +52,24 @@ function LeftToolbar() {
       <div className="h-px bg-[#333] w-full my-1" />
       
       <button
-    title="Delete Selected (Del)"
-    className="w-10 h-10 rounded text-[#999] flex items-center justify-center border border-transparent hover:bg-red-900/40 hover:text-red-400 hover:border-red-500/50 transition-colors"
-    onClick={deleteSelected}
-  >
+        title="Delete Selected (Del)"
+        className="w-10 h-10 rounded text-[#999] flex items-center justify-center border border-transparent hover:bg-red-900/40 hover:text-red-400 hover:border-red-500/50 transition-colors"
+        onClick={deleteSelected}
+      >
         <Trash2 size={20} strokeWidth={1.5} />
+      </button>
+
+      <div className="h-px bg-[#333] w-full my-1" />
+
+      <button
+        title="Templates Library"
+        className={cn(
+          "w-10 h-10 rounded text-[#999] flex items-center justify-center transition-colors border",
+          isTemplateDrawerOpen ? "bg-[#3a3b41] text-[#4a90e2] border-[#4a90e2]" : "border-transparent hover:bg-[#3a3b41] hover:text-white"
+        )}
+        onClick={() => setTemplateDrawerOpen(!isTemplateDrawerOpen)}
+      >
+        <LayoutTemplate size={20} strokeWidth={isTemplateDrawerOpen ? 2 : 1.5} />
       </button>
     </div>;
 }

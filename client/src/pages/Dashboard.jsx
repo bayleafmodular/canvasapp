@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMe } from '../services/api';
+import { useCadStore } from '../canvasApp/store/useCadStore';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -17,6 +18,12 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('precision-cad-storage');
+    try {
+      useCadStore.getState().clearDrawing();
+    } catch (e) {
+      // ignore
+    }
     navigate('/login');
   };
 

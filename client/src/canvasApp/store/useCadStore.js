@@ -1,8 +1,11 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { v4 as uuidv4 } from "uuid";
 import { Tool } from "../types";
 const DEFAULT_LAYER_ID = "layer-1";
-const useCadStore = create((set, get) => ({
+const useCadStore = create(
+  persist(
+    (set, get) => ({
   objects: [],
   layers: [
     { id: DEFAULT_LAYER_ID, name: "0", visible: true, locked: false, color: "#FFFFFF" }
@@ -20,6 +23,8 @@ const useCadStore = create((set, get) => ({
   clipboard: [],
   history: [[]],
   historyStep: 0,
+  loadedDrawingId: null,
+  loadedDrawingName: null,
   copyObjects: () => set((state) => {
     const selectedObjects = state.objects.filter((obj) => state.selectedIds.includes(obj.id));
     return { clipboard: selectedObjects };
@@ -48,6 +53,7 @@ const useCadStore = create((set, get) => ({
     useCadStore.getState().pasteObjects();
   },
   setTool: (tool) => set({ activeTool: tool, selectedIds: [] }),
+  setLoadedDrawing: (id, name) => set({ loadedDrawingId: id, loadedDrawingName: name }),
   setStageScale: (scale) => set({ stageScale: scale }),
   setStagePosition: (pos) => set({ stagePosition: pos }),
   toggleGrid: () => set((state) => ({ gridEnabled: !state.gridEnabled })),
@@ -156,10 +162,46 @@ const useCadStore = create((set, get) => ({
       historyStep: 0,
       selectedIds: [],
       layers: [{ id: DEFAULT_LAYER_ID, name: "0", visible: true, locked: false, color: "#FFFFFF" }],
-      activeLayerId: DEFAULT_LAYER_ID
+      loadedDrawingId: null,
+      loadedDrawingName: null,
+      activeLayerId: DEFAULT_LAYER_ID,
+      stageScale: 1,
+      stagePosition: { x: 0, y: 0 }
     });
-  }
-}));
+  },
+  isTemplateDrawerOpen: false,
+  setTemplateDrawerOpen: (isOpen) => set({ isTemplateDrawerOpen: isOpen })
+    }),
+    {
+      name: "precision-cad-storage",
+      partialize: (state) => ({
+        objects: state.objects,
+        layers: state.layers,
+        activeLayerId: state.activeLayerId,
+        activeColor: state.activeColor,
+        gridEnabled: state.gridEnabled,
+        snapEnabled: state.snapEnabled,
+        orthoEnabled: state.orthoEnabled,
+        showMeasurements: state.showMeasurements,
+        stageScale: state.stageScale,
+        stagePosition: state.stagePosition,
+        loadedDrawingId: state.loadedDrawingId,
+        loadedDrawingName: state.loadedDrawingName,
+      }),
+      onRehydrateStorage: () => (state, error) => {
+        if (state && !error) {
+          state.history = [state.objects || []];
+          state.historyStep = 0;
+          
+          if (state.stageScale < 0.05 || state.stageScale > 50 || isNaN(state.stageScale)) {
+            state.stageScale = 1;
+            state.stagePosition = { x: 0, y: 0 };
+          }
+        }
+      },
+    }
+  )
+);
 export {
   useCadStore
 };

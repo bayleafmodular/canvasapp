@@ -71,9 +71,31 @@ const deleteDrawingForUser = async (userId, id) => {
   return existing;
 };
 
+const updateDrawingForUser = async (userId, id, { name, data }) => {
+  const existing = await getDrawingForUser(userId, id);
+  if (!existing) return null;
+
+  const updates = {};
+  if (name !== undefined) updates.name = name;
+  if (data !== undefined) updates.data = data;
+  updates.updated_at = new Date().toISOString();
+
+  const { data: updated, error } = await supabase
+    .from(DRAWINGS_TABLE)
+    .update(updates)
+    .eq('id', id)
+    .eq('user_id', userId)
+    .select('id,name,created_at,updated_at')
+    .single();
+
+  if (error) throw error;
+  return toPublicDrawing(updated);
+};
+
 module.exports = {
   listDrawingsForUser,
   createDrawingForUser,
   getDrawingForUser,
+  updateDrawingForUser,
   deleteDrawingForUser,
 };

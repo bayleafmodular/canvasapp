@@ -8,10 +8,11 @@ import { TopToolbar } from "./components/toolbars/TopToolbar";
 import { RightSidebar } from "./components/sidebars/RightSidebar";
 import { StatusBar } from "./components/StatusBar";
 import { CadCanvas } from "./components/CadCanvas";
+import { TemplateDrawer } from "./components/sidebars/TemplateDrawer";
 import { useEffect } from "react";
 import { useCadStore } from "./store/useCadStore";
 import { Tool } from "./types";
-function App() {
+function App({ isTemplateMode, onBack }) {
   const { setTool, undo, redo, deleteSelected } = useCadStore();
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -71,11 +72,12 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [setTool, undo, redo, deleteSelected]);
   return <AppLayout
-    top={<TopToolbar />}
+    top={<TopToolbar isTemplateMode={isTemplateMode} onBack={onBack} />}
     left={<LeftToolbar />}
     right={<RightSidebar />}
     bottom={<StatusBar />}
   >
+      <TemplateDrawer />
       <CadCanvas />
     </AppLayout>;
 }

@@ -33,6 +33,7 @@ export const updateStaffUser = (id, data) => api.patch(`/admin/staff/${id}`, dat
 export const getDrawings = () => api.get('/drawings');
 export const createDrawing = (data) => api.post('/drawings', data);
 export const getDrawing = (id) => api.get(`/drawings/${id}`);
+export const updateDrawing = (id, data) => api.patch(`/drawings/${id}`, data);
 export const deleteDrawing = (id) => api.delete(`/drawings/${id}`);
 export const getPricingSettings = () => api.get('/pricing');
 export const updatePricingSettings = (data) => api.patch('/pricing', data);
@@ -42,3 +43,13 @@ export const createOrder = (data) => api.post('/orders', data);
 export const getAdminOrders = () => api.get('/admin/orders');
 export const updateAdminOrderStatus = (id, status, remarks) => api.patch(`/admin/orders/${id}`, { status, remarks });
 export const getUserOrders = () => api.get('/orders');
+<<<<<<< HEAD
+=======
+
+// Templates APIs
+export const getAdminTemplates = () => api.get('/templates');
+export const getAdminTemplateById = (id) => api.get(`/templates/${id}`);
+export const createAdminTemplate = (data) => api.post('/templates', data);
+export const updateAdminTemplate = (id, data) => api.patch(`/templates/${id}`, data);
+export const deleteAdminTemplate = (id) => api.delete(`/templates/${id}`);
+>>>>>>> 89a0e65 (Template functionality)

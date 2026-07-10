@@ -3,20 +3,64 @@ import { createPortal } from 'react-dom';
 import { 
   X, User, Phone, MapPin, Calendar, ZoomIn, ZoomOut, Maximize2, 
   ChevronLeft, FileText, LayoutGrid, MessageSquare, Clock, ShieldAlert,
+<<<<<<< HEAD
   CheckCircle2, AlertCircle, PlayCircle, ClipboardCheck
 } from 'lucide-react';
 import OrderStatusBadge from './OrderStatusBadge';
 import BlueprintDrawing from './BlueprintDrawing';
+=======
+  CheckCircle2, AlertCircle, PlayCircle, ClipboardCheck, Printer
+} from 'lucide-react';
+import html2pdf from 'html2pdf.js';
+import OrderStatusBadge from './OrderStatusBadge';
+import BlueprintDrawing from './BlueprintDrawing';
+import { calculateDrawingPrice } from '../../canvasApp/utils/pricing';
+>>>>>>> 89a0e65 (Template functionality)
 
 export default function OrderDetails({ order, isAdmin, onBack, onStatusChange, updating }) {
   const [zoomLevel, setZoomLevel] = useState(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [remarks, setRemarks] = useState(order.remarks || '');
+<<<<<<< HEAD
+=======
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+>>>>>>> 89a0e65 (Template functionality)
 
   // Keep local remarks in sync if order prop changes
   useEffect(() => {
     setRemarks(order.remarks || '');
   }, [order.remarks]);
+<<<<<<< HEAD
+=======
+
+  const handleSavePDF = () => {
+    const element = document.getElementById('invoice-print-container');
+    if (!element) return;
+    
+    setIsGeneratingPDF(true);
+    
+    const options = {
+      margin: 10,
+      filename: `ORD-${order.id}-spec-sheet.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf()
+      .from(element)
+      .set(options)
+      .save()
+      .then(() => {
+        setIsGeneratingPDF(false);
+      })
+      .catch((err) => {
+        console.error("PDF Generation failed:", err);
+        setIsGeneratingPDF(false);
+      });
+  };
+>>>>>>> 89a0e65 (Template functionality)
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -118,6 +162,7 @@ export default function OrderDetails({ order, isAdmin, onBack, onStatusChange, u
           </div>
         </div>
 
+<<<<<<< HEAD
         {isAdmin && (
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <span className="text-sm font-semibold text-gray-500 whitespace-nowrap">Status:</span>
@@ -136,6 +181,37 @@ export default function OrderDetails({ order, isAdmin, onBack, onStatusChange, u
             </select>
           </div>
         )}
+=======
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+          <button
+            onClick={() => setIsPrintModalOpen(true)}
+            className="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-gray-700 hover:text-indigo-600 font-semibold text-sm transition-all flex items-center gap-2 shadow-sm shadow-gray-50 shrink-0"
+            title="Print/Save Blueprint Spec Sheet PDF"
+          >
+            <Printer size={16} className="text-indigo-500" />
+            <span>Download Spec Sheet / PDF</span>
+          </button>
+
+          {isAdmin && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-gray-500 whitespace-nowrap">Status:</span>
+              <select
+                value={order.status}
+                onChange={(e) => onStatusChange(order.id, e.target.value, remarks)}
+                disabled={updating}
+                className="w-full sm:w-40 rounded-lg border border-gray-200 py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold disabled:opacity-55"
+              >
+                <option value="Pending">Pending</option>
+                <option value="In Review">In Review</option>
+                <option value="Processing">Processing (Blue)</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+          )}
+        </div>
+>>>>>>> 89a0e65 (Template functionality)
       </div>
 
       {/* Grid Layout */}
@@ -204,6 +280,10 @@ export default function OrderDetails({ order, isAdmin, onBack, onStatusChange, u
             </div>
           </div>
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 89a0e65 (Template functionality)
           {/* Admin remarks / feedback section */}
           <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 space-y-4">
             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
@@ -398,6 +478,150 @@ export default function OrderDetails({ order, isAdmin, onBack, onStatusChange, u
         document.body
       )}
 
+<<<<<<< HEAD
+=======
+      {/* Print Preview Modal */}
+      {isPrintModalOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto select-text">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900 text-white shrink-0">
+              <div>
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <FileText className="text-indigo-500" size={18} />
+                  <span>Blueprint Spec Sheet & Invoice Preview</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5 font-medium">Verify details before downloading your PDF file</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSavePDF}
+                  disabled={isGeneratingPDF}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800/50 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-indigo-500/20"
+                >
+                  {isGeneratingPDF ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Generating PDF...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Printer size={14} />
+                      <span>Save PDF</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setIsPrintModalOpen(false)}
+                  disabled={isGeneratingPDF}
+                  className="p-2 hover:bg-slate-800 border border-slate-700 rounded-lg transition-colors text-slate-400 hover:text-white"
+                  title="Close Preview"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-950 flex justify-center">
+              
+              {/* Paper Print Box target */}
+              <div 
+                id="invoice-print-container" 
+                className="bg-white text-black p-8 rounded-xl shadow-2xl max-w-3xl w-full font-sans text-xs leading-relaxed"
+              >
+                
+                {/* Brand Banner */}
+                <div className="border-b-2 border-slate-800 pb-3.5 mb-5 flex justify-between items-end">
+                  <div>
+                    <h1 className="text-xl font-extrabold tracking-tight text-slate-900 uppercase">Canvas Blueprint Design</h1>
+                    <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Blueprint Specification Details & Purchase Invoice</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 rounded text-slate-800 uppercase border border-slate-200">
+                      {order.status}
+                    </span>
+                    <p className="text-[10px] text-slate-400 mt-1.5 font-semibold">Order ID: {order.id}</p>
+                  </div>
+                </div>
+
+                {/* Information Grid */}
+                <div className="grid grid-cols-2 gap-6 mb-5 pb-5 border-b border-slate-100">
+                  <div>
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Customer Details</h3>
+                    <div className="space-y-0.5 font-medium">
+                      <p className="text-slate-800 font-bold text-sm">{order.customerName}</p>
+                      <p className="text-slate-600">{order.email}</p>
+                      <p className="text-slate-600">{order.phone || "—"}</p>
+                      <div className="mt-2.5 pt-1.5 border-t border-slate-50">
+                        <span className="text-[9px] text-slate-400 block font-bold uppercase tracking-wide">Billing & Delivery Address</span>
+                        <p className="text-slate-600 leading-normal whitespace-pre-line">{order.address || "—"}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Order Metadata</h3>
+                    <table className="w-full text-left font-medium">
+                      <tbody>
+                        <tr className="border-b border-slate-50">
+                          <td className="py-1 text-slate-400">Blueprint Title</td>
+                          <td className="py-1 text-right text-slate-800 font-bold">{order.productName}</td>
+                        </tr>
+                        <tr className="border-b border-slate-50">
+                          <td className="py-1 text-slate-400">Plan Blueprint Type</td>
+                          <td className="py-1 text-right text-slate-800 capitalize font-medium">{order.blueprintType.replace(/_/g, ' ')}</td>
+                        </tr>
+                        <tr className="border-b border-slate-50">
+                          <td className="py-1 text-slate-400">Order Quantity</td>
+                          <td className="py-1 text-right text-slate-800 font-medium">{order.quantity} unit(s)</td>
+                        </tr>
+                        <tr className="border-b border-slate-50">
+                          <td className="py-1 text-slate-400">Creation Date</td>
+                          <td className="py-1 text-right text-slate-800 font-medium">{new Date(order.orderDate || order.createdAt).toLocaleDateString()}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-1.5 text-slate-900 font-extrabold text-sm">Grand Total</td>
+                          <td className="py-1.5 text-right text-indigo-700 font-black text-sm">{formatPrice(order.totalPrice)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Visual Blueprint Drawing Section */}
+                <div className="mb-5">
+                  <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Blueprint Floorplan</h3>
+                  <div className="w-full aspect-[4/3] max-h-[300px] border border-slate-200 rounded-lg overflow-hidden bg-white p-2 flex items-center justify-center">
+                    <BlueprintDrawing type={order.blueprintType} drawingData={order.drawingData} lightMode={true} />
+                  </div>
+                </div>
+
+
+
+                {/* Reviewer Remarks Panel */}
+                {order.remarks && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-5">
+                    <h4 className="text-[9px] font-extrabold text-slate-800 uppercase tracking-wider mb-0.5">Reviewer Feedback Remarks</h4>
+                    <p className="text-slate-600 italic">"{order.remarks}"</p>
+                  </div>
+                )}
+
+                {/* Page Footer */}
+                <div className="border-t border-slate-200 pt-3 mt-6 flex justify-between items-center text-[9px] text-slate-400 font-medium">
+                  <p>© {new Date().getFullYear()} Canvas Blueprint System. All rights reserved.</p>
+                  <p>Generated: {new Date().toLocaleString()}</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+>>>>>>> 89a0e65 (Template functionality)
     </div>
   );
 }

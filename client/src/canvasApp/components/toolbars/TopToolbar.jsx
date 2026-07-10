@@ -2,11 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { useCadStore } from "../../store/useCadStore";
 import { Undo2, Redo2, Grid, Magnet, Ruler, AlignEndHorizontal, Upload, Image, FileJson, FileEdit, CloudUpload, CloudDownload, ChevronDown, Save, FolderOpen, Trash2, X, FilePlus, Calculator } from "lucide-react";
 import { cn, downloadFile } from "../../lib/utils";
-import { createDrawing, deleteDrawing, getDrawing, getDrawings, getPricingSettings, createOrder } from "../../../services/api";
+import { createDrawing, deleteDrawing, getDrawing, getDrawings, getPricingSettings, createOrder, updateDrawing } from "../../../services/api";
 import Drawing from "dxf-writer";
 import { ShapeType } from "../../types";
 import { calculateDrawingPrice } from "../../utils/pricing";
-function TopToolbar() {
+function TopToolbar({ isTemplateMode, onBack }) {     
   const {
     gridEnabled,
     snapEnabled,
@@ -24,7 +24,9 @@ function TopToolbar() {
     layers,
     activeColor,
     setActiveColor,
-    clearDrawing
+    clearDrawing,
+    loadedDrawingId,
+    loadedDrawingName
   } = useCadStore();
   const fileInputRef = useRef(null);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
@@ -223,7 +225,11 @@ function TopToolbar() {
       try {
         const data = JSON.parse(event.target?.result);
         if (data.objects && Array.isArray(data.objects)) {
-          useCadStore.setState({ objects: data.objects });
+          useCadStore.setState({
+            objects: data.objects,
+            loadedDrawingId: null,
+            loadedDrawingName: null
+          });
           if (data.layers) {
             useCadStore.setState({ layers: data.layers });
           }
@@ -254,10 +260,34 @@ function TopToolbar() {
       });
       setBrowserProjects((projects) => [savedDrawing, ...projects]);
       alert("Drawing saved to cloud successfully!");
+      useCadStore.setState({
+        loadedDrawingId: savedDrawing.id,
+        loadedDrawingName: savedDrawing.name
+      });
       setBrowserModalOpen(null);
       setSaveName("");
     } catch (e) {
       alert(e.response?.data?.message || "Failed to save drawing to cloud.");
+    } finally {
+      setBrowserLoading(false);
+    }
+  };
+  const handleUpdateBrowser = async () => {
+    if (!loadedDrawingId) return;
+    const data = {
+      objects,
+      layers,
+      version: "1.0"
+    };
+    setBrowserLoading(true);
+    try {
+      await updateDrawing(loadedDrawingId, {
+        name: loadedDrawingName,
+        data
+      });
+      alert("Drawing updated successfully!");
+    } catch (e) {
+      alert(e.response?.data?.message || "Failed to save drawing changes.");
     } finally {
       setBrowserLoading(false);
     }
@@ -268,7 +298,11 @@ function TopToolbar() {
       const { data: drawing } = await getDrawing(id);
       const data = drawing.data;
       if (data.objects && Array.isArray(data.objects)) {
-        useCadStore.setState({ objects: data.objects });
+        useCadStore.setState({
+          objects: data.objects,
+          loadedDrawingId: drawing.id,
+          loadedDrawingName: drawing.name
+        });
         if (data.layers) {
           useCadStore.setState({ layers: data.layers });
         }
@@ -310,6 +344,11 @@ function TopToolbar() {
       <div className="flex items-center space-x-2 mr-4">
         <div className="w-6 h-6 bg-[#4a90e2] rounded flex items-center justify-center font-bold text-white text-xs">P</div>
         <span className="text-sm font-semibold tracking-tight uppercase text-white">PrecisionCAD v2.4</span>
+        {loadedDrawingName && (
+          <span className="text-xs text-[#888] ml-2 border-l border-[#333] pl-2 flex items-center gap-1">
+            Editing: <strong className="text-white font-medium">{loadedDrawingName}</strong>
+          </span>
+        )}
       </div>
       <div className="h-4 w-px bg-[#333] mx-2" />
       <button
@@ -350,123 +389,153 @@ function TopToolbar() {
     </div>
 
     <div className="flex items-center gap-2">
-      <input
-        type="file"
-        accept=".json"
-        className="hidden"
-        ref={fileInputRef}
-        onChange={handleLoadJson}
-      />
-
-      <button
-        className="px-3 py-1.5 text-xs uppercase font-semibold tracking-wider bg-transparent text-[#777] border border-transparent hover:text-white rounded hover:bg-[#3a3b41] transition-colors flex items-center gap-1.5"
-        onClick={handleNewDrawing}
-        title="New Drawing"
-      >
-        <FilePlus size={14} /> New
-      </button>
-
-      {
-        /* Open Menu */
-      }
-      <div className="relative">
-        <button
-          className="px-3 py-1.5 text-xs uppercase font-semibold tracking-wider bg-[#1e1f22] text-[#777] border border-[#333] hover:text-white rounded hover:bg-[#3a3b41] transition-colors flex items-center gap-1.5"
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpenMenuOpen(!openMenuOpen);
-            setSaveMenuOpen(false);
-          }}
-          title="Open Options"
-        >
-          <FolderOpen size={14} /> Open <ChevronDown size={12} />
-        </button>
-
-        {openMenuOpen && <div className="absolute right-0 top-full mt-1 w-40 bg-[#1e1f22] border border-[#333] rounded shadow-xl z-50 overflow-hidden flex flex-col">
+      {isTemplateMode ? (
+        <>
           <button
-            className="px-4 py-2 text-xs text-left text-[#aaa] hover:text-white hover:bg-[#3a3b41] flex items-center gap-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpenMenuOpen(false);
-              fileInputRef.current?.click();
-            }}
+            className="px-3 py-1.5 text-xs uppercase font-semibold tracking-wider bg-transparent text-[#777] border border-transparent hover:text-white rounded hover:bg-[#3a3b41] transition-colors flex items-center gap-1.5 mr-2"
+            onClick={onBack}
           >
-            <Upload size={14} /> Local File (.json)
+            Cancel
           </button>
           <button
-            className="px-4 py-2 text-xs text-left text-[#aaa] hover:text-white hover:bg-[#3a3b41] flex items-center gap-2 border-t border-[#333]"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpenMenuOpen(false);
-              setBrowserModalOpen("load");
-            }}
+            className="px-4 py-1.5 text-xs uppercase font-bold tracking-wider bg-[#4a90e2] text-white hover:bg-[#3a7fc2] rounded transition-colors flex items-center gap-1.5"
+            onClick={() => window.dispatchEvent(new CustomEvent('save-template-intent'))}
           >
-            <CloudDownload size={14} /> Cloud / Browser
+            <Save size={14} /> Save Template Details
           </button>
-        </div>}
-      </div>
+        </>
+      ) : (
+        <>
+          <input
+            type="file"
+            accept=".json"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleLoadJson}
+          />
 
-      {
-        /* Save Menu */
-      }
-      <div className="relative">
-        <button
-          className="px-3 py-1.5 text-xs uppercase font-semibold tracking-wider bg-[#1e1f22] text-[#777] border border-[#333] hover:text-white rounded hover:bg-[#3a3b41] transition-colors flex items-center gap-1.5"
-          onClick={(e) => {
-            e.stopPropagation();
-            setSaveMenuOpen(!saveMenuOpen);
-            setOpenMenuOpen(false);
-          }}
-          title="Save Options"
-        >
-          <Save size={14} /> Save <ChevronDown size={12} />
-        </button>
-
-        {saveMenuOpen && <div className="absolute right-0 top-full mt-1 w-40 bg-[#1e1f22] border border-[#333] rounded shadow-xl z-50 overflow-hidden flex flex-col">
           <button
-            className="px-4 py-2 text-xs text-left text-[#aaa] hover:text-white hover:bg-[#3a3b41] flex items-center gap-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              setSaveMenuOpen(false);
-              handleSaveJson();
-            }}
+            className="px-3 py-1.5 text-xs uppercase font-semibold tracking-wider bg-transparent text-[#777] border border-transparent hover:text-white rounded hover:bg-[#3a3b41] transition-colors flex items-center gap-1.5"
+            onClick={handleNewDrawing}
+            title="New Drawing"
           >
-            <FileJson size={14} /> Local File (.json)
+            <FilePlus size={14} /> New
+          </button>
+
+          {/* Open Menu */}
+          <div className="relative">
+            <button
+              className="px-3 py-1.5 text-xs uppercase font-semibold tracking-wider bg-[#1e1f22] text-[#777] border border-[#333] hover:text-white rounded hover:bg-[#3a3b41] transition-colors flex items-center gap-1.5"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenMenuOpen(!openMenuOpen);
+                setSaveMenuOpen(false);
+              }}
+              title="Open Options"
+            >
+              <FolderOpen size={14} /> Open <ChevronDown size={12} />
+            </button>
+
+            {openMenuOpen && <div className="absolute right-0 top-full mt-1 w-40 bg-[#1e1f22] border border-[#333] rounded shadow-xl z-50 overflow-hidden flex flex-col">
+              <button
+                className="px-4 py-2 text-xs text-left text-[#aaa] hover:text-white hover:bg-[#3a3b41] flex items-center gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenuOpen(false);
+                  fileInputRef.current?.click();
+                }}
+              >
+                <Upload size={14} /> Local File (.json)
+              </button>
+              <button
+                className="px-4 py-2 text-xs text-left text-[#aaa] hover:text-white hover:bg-[#3a3b41] flex items-center gap-2 border-t border-[#333]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenuOpen(false);
+                  setBrowserModalOpen("load");
+                }}
+              >
+                <CloudDownload size={14} /> Cloud / Browser
+              </button>
+            </div>}
+          </div>
+
+          {/* Save Menu */}
+          <div className="relative">
+            <button
+              className="px-3 py-1.5 text-xs uppercase font-semibold tracking-wider bg-[#1e1f22] text-[#777] border border-[#333] hover:text-white rounded hover:bg-[#3a3b41] transition-colors flex items-center gap-1.5"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSaveMenuOpen(!saveMenuOpen);
+                setOpenMenuOpen(false);
+              }}
+              title="Save Options"
+            >
+              <Save size={14} /> Save <ChevronDown size={12} />
+            </button>
+
+            {saveMenuOpen && <div className="absolute right-0 top-full mt-1 w-40 bg-[#1e1f22] border-[#333] rounded shadow-xl z-50 overflow-hidden flex flex-col">
+              {loadedDrawingId && (
+                <button
+                  className="px-4 py-2 text-xs text-left text-[#aaa] hover:text-white hover:bg-[#3a3b41] flex items-center gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSaveMenuOpen(false);
+                    handleUpdateBrowser();
+                  }}
+                >
+                  <Save size={14} /> Save Changes
+                </button>
+              )}
+              <button
+                className={cn(
+                  "px-4 py-2 text-xs text-left text-[#aaa] hover:text-white hover:bg-[#3a3b41] flex items-center gap-2",
+                  loadedDrawingId && "border-t border-[#333]"
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSaveMenuOpen(false);
+                  handleSaveJson();
+                }}
+              >
+                <FileJson size={14} /> Local File (.json)
+              </button>
+              <button
+                className="px-4 py-2 text-xs text-left text-[#aaa] hover:text-white hover:bg-[#3a3b41] flex items-center gap-2 border-t border-[#333]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSaveMenuOpen(false);
+                  setBrowserModalOpen("save");
+                }}
+              >
+                <CloudUpload size={14} /> {loadedDrawingId ? "Save As New..." : "Cloud / Browser"}
+              </button>
+            </div>}
+          </div>
+
+          <button
+            className="px-3 py-1.5 text-xs uppercase font-semibold tracking-wider bg-transparent text-[#777] hover:text-white rounded hover:bg-[#3a3b41] transition-colors flex items-center gap-1.5 ml-2"
+            onClick={handleExportDxf}
+            title="Export DXF"
+          >
+            <FileEdit size={14} /> DXF
           </button>
           <button
-            className="px-4 py-2 text-xs text-left text-[#aaa] hover:text-white hover:bg-[#3a3b41] flex items-center gap-2 border-t border-[#333]"
-            onClick={(e) => {
-              e.stopPropagation();
-              setSaveMenuOpen(false);
-              setBrowserModalOpen("save");
-            }}
+            className="px-3 py-1.5 text-xs uppercase font-bold tracking-wider bg-[#16a34a] text-white hover:bg-[#15803d] rounded transition-colors flex items-center gap-1.5"
+            onClick={handleShowPrice}
+            title="Calculate drawing price"
           >
-            <CloudUpload size={14} /> Cloud / Browser
+            <Calculator size={14} /> Show Price
           </button>
-        </div>}
-      </div>
-
-      <button
-        className="px-3 py-1.5 text-xs uppercase font-semibold tracking-wider bg-transparent text-[#777] hover:text-white rounded hover:bg-[#3a3b41] transition-colors flex items-center gap-1.5 ml-2"
-        onClick={handleExportDxf}
-        title="Export DXF"
-      >
-        <FileEdit size={14} /> DXF
-      </button>
-      <button
-        className="px-3 py-1.5 text-xs uppercase font-bold tracking-wider bg-[#16a34a] text-white hover:bg-[#15803d] rounded transition-colors flex items-center gap-1.5"
-        onClick={handleShowPrice}
-        title="Calculate drawing price"
-      >
-        <Calculator size={14} /> Show Price
-      </button>
-      <button
-        className="px-4 py-1.5 text-xs uppercase font-bold tracking-wider bg-[#4a90e2] text-white hover:bg-[#3a7fc2] rounded transition-colors flex items-center gap-1.5"
-        onClick={handleExportPng}
-        title="Export PNG"
-      >
-        <Image size={14} /> PNG
-      </button>
+          <button
+            className="px-4 py-1.5 text-xs uppercase font-bold tracking-wider bg-[#4a90e2] text-white hover:bg-[#3a7fc2] rounded transition-colors flex items-center gap-1.5"
+            onClick={handleExportPng}
+            title="Export PNG"
+          >
+            <Image size={14} /> PNG
+          </button>
+        </>
+      )}
     </div>
 
     {browserModalOpen && <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center backdrop-blur-sm">

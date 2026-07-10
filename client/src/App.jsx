@@ -13,6 +13,8 @@ import UserDashboard from './pages/UserDashboard';
 import ManageUsers from './pages/ManageUsers';
 import ManageStaff from './pages/ManageStaff';
 import ManageOrders from './pages/ManageOrders';
+import ManageTemplates from './pages/ManageTemplates';
+import TemplateEditor from './pages/TemplateEditor';
 import Settings from './pages/Settings';
 import CanvasApp from './pages/CanvasApp';
 import PrivateRoute from './components/PrivateRoute';
@@ -55,6 +57,24 @@ function App() {
             <ManageOrders />
           </PrivateRoute>
         } />
+<<<<<<< HEAD
+=======
+        <Route path="/admin-dashboard/templates" element={
+          <PrivateRoute allowedRoles={['admin', 'staff']}>
+            <ManageTemplates />
+          </PrivateRoute>
+        } />
+        <Route path="/admin-dashboard/templates/new" element={
+          <PrivateRoute allowedRoles={['admin', 'staff']}>
+            <TemplateEditor />
+          </PrivateRoute>
+        } />
+        <Route path="/admin-dashboard/templates/:id/edit" element={
+          <PrivateRoute allowedRoles={['admin', 'staff']}>
+            <TemplateEditor />
+          </PrivateRoute>
+        } />
+>>>>>>> 89a0e65 (Template functionality)
         <Route path="/staff-dashboard" element={
           <PrivateRoute allowedRoles={['staff']}>
             <StaffDashboard />

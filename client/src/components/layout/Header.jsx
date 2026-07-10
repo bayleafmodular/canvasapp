@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCadStore } from '../../canvasApp/store/useCadStore';
 
 const roleBadgeColor = {
   admin: 'bg-red-100 text-red-600',
@@ -26,6 +27,13 @@ export default function Header({ user, onMenuToggle }) {
   const handleLogout = () => {
     const role = localStorage.getItem("role");
 
+    try {
+      useCadStore.getState().clearDrawing();
+    } catch (e) {
+      console.error("Failed to clear drawing store on logout", e);
+    }
+
+    localStorage.removeItem('precision-cad-storage');
     localStorage.clear();
 
     if (role === "admin" || role === "staff") {

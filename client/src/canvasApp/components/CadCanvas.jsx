@@ -424,7 +424,10 @@ function CadCanvas() {
         x: (pointer.x - stage.x()) / oldScale,
         y: (pointer.y - stage.y()) / oldScale
       };
-      const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+      let newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+      // Clamp the scale to prevent zooming out into infinity (0%) or zooming in too much
+      if (newScale < 0.05) newScale = 0.05;
+      if (newScale > 50) newScale = 50;
       setStageScale(newScale);
       setStagePosition({
         x: pointer.x - mousePointTo.x * newScale,
@@ -797,8 +800,8 @@ function CadCanvas() {
     });
   };
   const gridStyle = gridEnabled ? {
-    backgroundImage: "radial-gradient(#333 1px, transparent 1px)",
-    backgroundSize: `${10 * stageScale}px ${10 * stageScale}px`,
+    backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px)",
+    backgroundSize: `${20 * stageScale}px ${20 * stageScale}px`,
     backgroundPosition: `${stagePosition.x}px ${stagePosition.y}px`
   } : {};
   return <div
