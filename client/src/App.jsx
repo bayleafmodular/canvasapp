@@ -57,8 +57,6 @@ function App() {
             <ManageOrders />
           </PrivateRoute>
         } />
-<<<<<<< HEAD
-=======
         <Route path="/admin-dashboard/templates" element={
           <PrivateRoute allowedRoles={['admin', 'staff']}>
             <ManageTemplates />
@@ -74,7 +72,6 @@ function App() {
             <TemplateEditor />
           </PrivateRoute>
         } />
->>>>>>> 89a0e65 (Template functionality)
         <Route path="/staff-dashboard" element={
           <PrivateRoute allowedRoles={['staff']}>
             <StaffDashboard />

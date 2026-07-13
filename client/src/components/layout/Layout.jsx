@@ -51,15 +51,12 @@ export default function Layout({ children, fullScreen = false }) {
         localStorage.removeItem('user');
         localStorage.removeItem('role');
         localStorage.removeItem('permissions');
-<<<<<<< HEAD
-=======
         localStorage.removeItem('precision-cad-storage');
         try {
           useCadStore.getState().clearDrawing();
         } catch (e) {
           // ignore
         }
->>>>>>> 89a0e65 (Template functionality)
         navigate('/login');
       });
 
